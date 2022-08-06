@@ -20,7 +20,7 @@ Place your cursor at where you want your code to be aligned, and use shortcut `a
 
 ## Screenshots
 
-![auto-align-characters.gif](./images/auto-align-characters.gif)
+![auto-align-characters.gif](https://github.com/chouzz/vscode-better-align/blob/main/images/auto-align-characters.gif)
 
 ## Extension Configuration
 
@@ -96,9 +96,9 @@ $data = array(
 
 ## Issues/Contribution
 
-If you've found a bug, please file at <https://github.com/chouzz/vscode-innosetup/issues>.
+If you've found a bug, please file at <https://github.com/chouzz/vscode-better-align/issues>.
 
-If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-better-aligin/issues) and submit pull requests.
+If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-better-align) and submit pull requests.
 
 ## License
 

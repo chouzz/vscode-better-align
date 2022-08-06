@@ -11,12 +11,12 @@
         "url": "https://github.com/chouzz"
     },
 	"bugs": {
-		"url": "https://github.com/chouzz/vscode-better-aligin/issues",
+		"url": "https://github.com/chouzz/vscode-better-align/issues",
 		"email": "zhouhua25@qq.com"
 	  },
 	  "repository": {
 		"type": "git",
-		"url": "https://github.com/chouzz/vscode-better-aligin.git"
+		"url": "https://github.com/chouzz/vscode-better-align.git"
 	  },
 	"engines": {
 		"vscode": "^1.47.0"
