@@ -1,25 +1,102 @@
 {
   "name": "vscode-better-align",
 	"displayName": "Better Align",
-	"description": "",
+	"description": "Better vertical alignment with/without selection in any language for any characters or words.",
 	"version": "0.0.1",
+	"icon": "images/icon.png",
+	"publisher": "chouzz",
+    "license": "SEE LICENSE IN LICENSE",
+	"author": {
+        "name": "Chouzz",
+        "url": "https://github.com/chouzz"
+    },
+	"bugs": {
+		"url": "https://github.com/chouzz/vscode-better-aligin/issues",
+		"email": "zhouhua25@qq.com"
+	  },
+	  "repository": {
+		"type": "git",
+		"url": "https://github.com/chouzz/vscode-better-aligin.git"
+	  },
 	"engines": {
-		"vscode": "^1.70.0"
+		"vscode": "^1.47.0"
 	},
 	"categories": [
-		"Other"
+		"Formatters"
 	],
 	"activationEvents": [
-        "onCommand:vscode-better-align.helloWorld"
+		"onStartupFinished",
+		"onCommand:vscode-better-align.align"
 	],
 	"main": "./dist/extension.js",
 	"contributes": {
 		"commands": [
 			{
-				"command": "vscode-better-align.helloWorld",
-				"title": "Hello World"
+				"command": "vscode-better-align.align",
+				"title": "Align"
 			}
-		]
+		],
+		"configuration": {
+			"type": "object",
+			"title": "Alignment configuration",
+			"properties": {
+				"alignment.operatorPadding": {
+					"type": "string",
+					"enum": [
+						"left",
+						"right"
+					],
+					"default": "right",
+					"description": "Control where to insert space to align different length operators (e.g. aligning = += *= ...)"
+				},
+				"alignment.surroundSpace": {
+					"type": "object",
+					"default": {
+						"colon": [
+							0,
+							1
+						],
+						"assignment": [
+							1,
+							1
+						],
+						"arrow":[
+							1,
+							1
+						],
+						"comment": 2
+					},
+					"description": "Specify how many spaces to insert around the operator."
+				},
+				"alignment.indentBase": {
+					"type": "string",
+					"enum": [
+						"firstline",
+						"activeline",
+						"dontchange"
+					],
+					"default": "firstline",
+					"description": "firstline: Change indent of all lines to the firstline.\n activeline: Change intent of all lines to the activeline.\n dontchange: Don't change line indent, only aligns those lines with same indentation."
+				}
+			}
+		},
+		"configurationDefaults": {
+			"[shellscript]": {				
+				"alignment.surroundSpace": {
+					"colon": [ 0, 1 ],
+					"assignment": [ -1, -1 ],
+					"arrow":[ 1, 1 ],
+					"comment": 2
+				}
+			}
+		},
+		"keybindings": [
+			{
+			  "command": "vscode-better-align.align",
+			  "key": "alt+a",
+			  "when": "editorTextFocus"
+			}
+		  ]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",

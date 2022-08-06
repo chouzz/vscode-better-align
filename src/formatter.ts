@@ -36,13 +36,13 @@ interface LineRange {
 }
 
 const REG_WS = /\s/;
-const BRACKET_PAIR = {
+const BRACKET_PAIR:any = {
     '{': '}',
     '[': ']',
     '(': ')',
 };
 
-function whitespace(count) {
+function whitespace(count: number) {
     return new Array(count + 1).join(' ');
 }
 
@@ -61,9 +61,9 @@ export default class Formatter {
         editor.selections.forEach((sel) => {
             const indentBase = this.getConfig().get(
                 'indentBase',
-                'firstline'
+                'firstline',
             ) as string;
-            const importantIndent: boolean = indentBase == 'dontchange';
+            const importantIndent: boolean = indentBase === 'dontchange';
 
             let res: LineRange;
             if (sel.isSingleLine) {
@@ -73,8 +73,8 @@ export default class Formatter {
                         0,
                         editor.document.lineCount - 1,
                         sel.active.line,
-                        importantIndent
-                    )
+                        importantIndent,
+                    ),
                 );
             } else {
                 // Otherwise, narrow down the range where to align
@@ -91,12 +91,12 @@ export default class Formatter {
 
                     if (
                         res.infos[0] &&
-                        res.infos[0].sgfntTokenType != TokenType.Invalid
+                        res.infos[0].sgfntTokenType !== TokenType.Invalid
                     ) {
                         ranges.push(res);
                     }
 
-                    if (lastLine.line.lineNumber == end) {
+                    if (lastLine.line.lineNumber === end) {
                         break;
                     }
 
@@ -108,13 +108,6 @@ export default class Formatter {
         // Format
         let formatted: string[][] = [];
         for (let range of ranges) {
-            /*
-            console.log( `\n===============` );
-            for ( let info of range.infos ) {
-              console.log( `+++ [${info.line.lineNumber}]: ${TokenType[info.sgfntTokenType]} +++` );
-              console.log( info.line, info.tokens );
-            }
-            // */
 
             formatted.push(this.format(range));
         }
@@ -128,7 +121,7 @@ export default class Formatter {
                     infos[0].line.lineNumber,
                     0,
                     lastline.lineNumber,
-                    lastline.text.length
+                    lastline.text.length,
                 );
 
                 editBuilder.replace(location, formatted[i].join('\n'));
@@ -140,13 +133,13 @@ export default class Formatter {
 
     protected getConfig() {
         let defaultConfig = vscode.workspace.getConfiguration('alignment');
-        let langConfig: Object = null;
+        let langConfig: any = null;
 
         try {
             langConfig = vscode.workspace
                 .getConfiguration()
                 .get(`[${this.editor.document.languageId}]`) as any;
-        } catch (e) { }
+        } catch (e) {}
 
         return {
             get: function (key: any, defaultValue?: any): any {
@@ -187,52 +180,57 @@ export default class Formatter {
             // Tokens order are important
             if (char.match(REG_WS)) {
                 currTokenType = TokenType.Whitespace;
-            } else if (char == '"' || char == "'" || char == '`') {
+            } else if (char === '"' || char === "'" || char === '`') {
                 currTokenType = TokenType.String;
-            } else if (char == '{' || char == '(' || char == '[') {
+            } else if (char === '{' || char === '(' || char === '[') {
                 currTokenType = TokenType.Block;
-            } else if (char == '}' || char == ')' || char == ']') {
+            } else if (char === '}' || char === ')' || char === ']') {
                 currTokenType = TokenType.EndOfBlock;
             } else if (
-                char == '/' &&
-                ((next == '/' && (pos > 0 ? text.charAt(pos - 1) : '') != ':') || // only `//` but not `://`
-                    next == '*')
+                char === '/' &&
+                ((next === '/' &&
+                    (pos > 0 ? text.charAt(pos - 1) : '') !== ':') || // only `//` but not `://`
+                    next === '*')
             ) {
                 currTokenType = TokenType.Comment;
-            } else if (char == ':' && next != ':') {
+            } else if (char === ':' && next !== ':') {
                 currTokenType = TokenType.Colon;
-            } else if (char == ',') {
+            } else if (char === ',') {
                 if (
-                    lt.tokens.length == 0 ||
-                    (lt.tokens.length == 1 && lt.tokens[0].type == TokenType.Whitespace)
+                    lt.tokens.length === 0 ||
+                    (lt.tokens.length === 1 &&
+                        lt.tokens[0].type === TokenType.Whitespace)
                 ) {
                     currTokenType = TokenType.CommaAsWord; // Comma-first style
                 } else {
                     currTokenType = TokenType.Comma;
                 }
-            } else if (char == '=' && next == '>') {
+            } else if (char === '=' && next === '>') {
                 currTokenType = TokenType.Arrow;
                 nextSeek = 2;
-            } else if (char == '=' && next == '=') {
+            } else if (char === '=' && next === '=') {
                 currTokenType = TokenType.Word;
                 nextSeek = 2;
             } else if (
-                (char == '+' || char == '-' || char == '*' || char == '/') &&
-                next == '='
+                (char === '+' || char === '-' || char === '*' || char === '/') &&
+                next === '='
             ) {
                 currTokenType = TokenType.Assignment;
                 nextSeek = 2;
-            } else if (char == '=' && next != '=') {
+            } else if (char === '=' && next !== '=') {
                 currTokenType = TokenType.Assignment;
             } else {
                 currTokenType = TokenType.Word;
             }
 
-            if (currTokenType != lastTokenType) {
-                if (tokenStartPos != -1) {
+            if (currTokenType !== lastTokenType) {
+                if (tokenStartPos !== -1) {
                     lt.tokens.push({
                         type: lastTokenType,
-                        text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
+                        text: textline.text.substr(
+                            tokenStartPos,
+                            pos - tokenStartPos,
+                        ),
                     });
                 }
 
@@ -240,9 +238,9 @@ export default class Formatter {
                 tokenStartPos = pos;
 
                 if (
-                    lastTokenType == TokenType.Assignment ||
-                    lastTokenType == TokenType.Colon ||
-                    lastTokenType == TokenType.Arrow
+                    lastTokenType === TokenType.Assignment ||
+                    lastTokenType === TokenType.Colon ||
+                    lastTokenType === TokenType.Arrow
                 ) {
                     if (lt.sgfntTokens.indexOf(lastTokenType) === -1) {
                         lt.sgfntTokens.push(lastTokenType);
@@ -251,11 +249,11 @@ export default class Formatter {
             }
 
             // Skip to end of string
-            if (currTokenType == TokenType.String) {
+            if (currTokenType === TokenType.String) {
                 ++pos;
                 while (pos < text.length) {
                     let quote = text.charAt(pos);
-                    if (quote == char && text.charAt(pos - 1) != '\\') {
+                    if (quote === char && text.charAt(pos - 1) !== '\\') {
                         break;
                     }
                     ++pos;
@@ -266,18 +264,18 @@ export default class Formatter {
             }
 
             // Skip to end of block
-            if (currTokenType == TokenType.Block) {
+            if (currTokenType === TokenType.Block) {
                 ++pos;
                 let bracketCount = 1;
                 while (pos < text.length) {
                     let bracket = text.charAt(pos);
-                    if (bracket == char) {
+                    if (bracket === char) {
                         ++bracketCount;
                     } else if (
-                        bracket == BRACKET_PAIR[char] &&
-                        text.charAt(pos - 1) != '\\'
+                        bracket === BRACKET_PAIR[char] &&
+                        text.charAt(pos - 1) !== '\\'
                     ) {
-                        if (bracketCount == 1) {
+                        if (bracketCount === 1) {
                             break;
                         } else {
                             --bracketCount;
@@ -290,14 +288,17 @@ export default class Formatter {
                 }
             }
 
-            if (char == '/') {
+            if (char === '/') {
                 // Skip to end if we encounter single line comment
-                if (next == '/') {
+                if (next === '/') {
                     pos = text.length;
-                } else if (next == '*') {
+                } else if (next === '*') {
                     ++pos;
                     while (pos < text.length) {
-                        if (text.charAt(pos) == '*' && text.charAt(pos + 1) == '/') {
+                        if (
+                            text.charAt(pos) === '*' &&
+                            text.charAt(pos + 1) === '/'
+                        ) {
                             ++pos;
                             currTokenType = TokenType.Word;
                             break;
@@ -310,7 +311,7 @@ export default class Formatter {
             pos += nextSeek;
         }
 
-        if (tokenStartPos != -1) {
+        if (tokenStartPos !== -1) {
             lt.tokens.push({
                 type: lastTokenType,
                 text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
@@ -324,9 +325,9 @@ export default class Formatter {
         for (let j = info.tokens.length - 1; j >= 0; --j) {
             let lastT = info.tokens[j];
             if (
-                lastT.type == TokenType.PartialBlock ||
-                lastT.type == TokenType.EndOfBlock ||
-                lastT.type == TokenType.PartialString
+                lastT.type === TokenType.PartialBlock ||
+                lastT.type === TokenType.EndOfBlock ||
+                lastT.type === TokenType.PartialString
             ) {
                 return true;
             }
@@ -338,11 +339,11 @@ export default class Formatter {
         var t1 = info1.tokens[0];
         var t2 = info2.tokens[0];
 
-        if (t1.type == TokenType.Whitespace) {
-            if (t1.text == t2.text) {
+        if (t1.type === TokenType.Whitespace) {
+            if (t1.text === t2.text) {
                 return true;
             }
-        } else if (t2.type != TokenType.Whitespace) {
+        } else if (t2.type !== TokenType.Whitespace) {
             return true;
         }
 
@@ -351,7 +352,7 @@ export default class Formatter {
 
     protected arrayAnd(array1: TokenType[], array2: TokenType[]): TokenType[] {
         var res: TokenType[] = [];
-        var map = {};
+        var map:any = {};
         for (var i = 0; i < array1.length; ++i) {
             map[array1[i]] = true;
         }
@@ -375,14 +376,14 @@ export default class Formatter {
         start: number,
         end: number,
         anchor: number,
-        importantIndent: boolean
+        importantIndent: boolean,
     ): LineRange {
         let anchorToken = this.tokenize(anchor);
         let range = { anchor, infos: [anchorToken] };
 
         let tokenTypes = anchorToken.sgfntTokens;
 
-        if (anchorToken.sgfntTokens.length == 0) {
+        if (anchorToken.sgfntTokens.length === 0) {
             return range;
         }
 
@@ -399,7 +400,7 @@ export default class Formatter {
             }
 
             let tt = this.arrayAnd(tokenTypes, token.sgfntTokens);
-            if (tt.length == 0) {
+            if (tt.length === 0) {
                 break;
             }
             tokenTypes = tt;
@@ -417,7 +418,7 @@ export default class Formatter {
             let token = this.tokenize(i);
 
             let tt = this.arrayAnd(tokenTypes, token.sgfntTokens);
-            if (tt.length == 0) {
+            if (tt.length === 0) {
                 break;
             }
             tokenTypes = tt;
@@ -454,28 +455,28 @@ export default class Formatter {
         let anchorLine = range.infos[0];
         const config = this.getConfig();
 
-        if ((config.get('indentBase', 'firstline') as string) == 'activeline') {
+        if ((config.get('indentBase', 'firstline') as string) === 'activeline') {
             for (let info of range.infos) {
-                if (info.line.lineNumber == range.anchor) {
+                if (info.line.lineNumber === range.anchor) {
                     anchorLine = info;
                     break;
                 }
             }
         }
 
-        if (anchorLine.tokens[0].type == TokenType.Whitespace) {
+        if (anchorLine.tokens[0].type === TokenType.Whitespace) {
             indentation = anchorLine.tokens[0].text;
         } else {
             indentation = '';
         }
 
         for (let info of range.infos) {
-            if (info.tokens[0].type == TokenType.Whitespace) {
+            if (info.tokens[0].type === TokenType.Whitespace) {
                 info.tokens.shift();
             }
             if (
                 info.tokens.length > 1 &&
-                info.tokens[info.tokens.length - 1].type == TokenType.Whitespace
+                info.tokens[info.tokens.length - 1].type === TokenType.Whitespace
             ) {
                 info.tokens.pop();
             }
@@ -486,17 +487,20 @@ export default class Formatter {
         for (let info of range.infos) {
             let count = 0;
             for (let token of info.tokens) {
-                if (token.type == info.sgfntTokenType) {
+                if (token.type === info.sgfntTokenType) {
                     count = -count;
                     break;
                 }
-                if (token.type != TokenType.Whitespace) {
+                if (token.type !== TokenType.Whitespace) {
                     ++count;
                 }
             }
 
             if (count < -1) {
-                firstWordLength = Math.max(firstWordLength, info.tokens[0].text.length);
+                firstWordLength = Math.max(
+                    firstWordLength,
+                    info.tokens[0].text.length,
+                );
             }
         }
         if (firstWordLength > 0) {
@@ -509,29 +513,31 @@ export default class Formatter {
             for (let info of range.infos) {
                 let count = 0;
                 for (let token of info.tokens) {
-                    if (token.type == info.sgfntTokenType) {
+                    if (token.type === info.sgfntTokenType) {
                         count = -count;
                         break;
                     }
-                    if (token.type != TokenType.Whitespace) {
+                    if (token.type !== TokenType.Whitespace) {
                         ++count;
                     }
                 }
 
-                if (count == -1) {
+                if (count === -1) {
                     info.tokens.unshift(wordSpace);
                 } else if (count < -1) {
-                    if (info.tokens[1].type == TokenType.Whitespace) {
+                    if (info.tokens[1].type === TokenType.Whitespace) {
                         info.tokens[1] = oneSpace;
-                    } else if (info.tokens[0].type == TokenType.CommaAsWord) {
+                    } else if (info.tokens[0].type === TokenType.CommaAsWord) {
                         info.tokens.splice(1, 0, oneSpace);
                     }
-                    if (info.tokens[0].text.length != firstWordLength) {
+                    if (info.tokens[0].text.length !== firstWordLength) {
                         let ws = {
                             type: TokenType.Insertion,
-                            text: whitespace(firstWordLength - info.tokens[0].text.length),
+                            text: whitespace(
+                                firstWordLength - info.tokens[0].text.length,
+                            ),
                         };
-                        if (info.tokens[0].type == TokenType.CommaAsWord) {
+                        if (info.tokens[0].type === TokenType.CommaAsWord) {
                             info.tokens.unshift(ws);
                         } else {
                             info.tokens.splice(1, 0, ws);
@@ -546,16 +552,16 @@ export default class Formatter {
             let i = 1;
             while (i < info.tokens.length) {
                 if (
-                    info.tokens[i].type == info.sgfntTokenType ||
-                    info.tokens[i].type == TokenType.Comma
+                    info.tokens[i].type === info.sgfntTokenType ||
+                    info.tokens[i].type === TokenType.Comma
                 ) {
-                    if (info.tokens[i - 1].type == TokenType.Whitespace) {
+                    if (info.tokens[i - 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i - 1, 1);
                         --i;
                     }
                     if (
                         info.tokens[i + 1] &&
-                        info.tokens[i + 1].type == TokenType.Whitespace
+                        info.tokens[i + 1].type === TokenType.Whitespace
                     ) {
                         info.tokens.splice(i + 1, 1);
                     }
@@ -568,7 +574,7 @@ export default class Formatter {
         const configOP = config.get('operatorPadding') as string;
         const configWS = config.get('surroundSpace');
         const stt = TokenType[range.infos[0].sgfntTokenType].toLowerCase();
-        const configDef = {
+        const configDef:any = {
             colon: [0, 1],
             assignment: [1, 1],
             comment: 2,
@@ -599,7 +605,7 @@ export default class Formatter {
                 let info = range.infos[l];
                 let tokenSize = info.tokens.length;
 
-                if (i == -1) {
+                if (i === -1) {
                     continue;
                 }
 
@@ -609,12 +615,12 @@ export default class Formatter {
                 // Bail out if we reach to the trailing comment
                 if (
                     tokenSize > 1 &&
-                    info.tokens[tokenSize - 1].type == TokenType.Comment
+                    info.tokens[tokenSize - 1].type === TokenType.Comment
                 ) {
                     hasTrallingComment = true;
                     if (
                         tokenSize > 2 &&
-                        info.tokens[tokenSize - 2].type == TokenType.Whitespace
+                        info.tokens[tokenSize - 2].type === TokenType.Whitespace
                     ) {
                         end = tokenSize - 2;
                     } else {
@@ -626,10 +632,13 @@ export default class Formatter {
                     let token = info.tokens[i];
                     // Vertical align will occur at significant operator or subsequent comma
                     if (
-                        token.type == info.sgfntTokenType ||
-                        (token.type == TokenType.Comma && i != 0)
+                        token.type === info.sgfntTokenType ||
+                        (token.type === TokenType.Comma && i !== 0)
                     ) {
-                        operatorSize = Math.max(operatorSize, token.text.length);
+                        operatorSize = Math.max(
+                            operatorSize,
+                            token.text.length,
+                        );
                         break;
                     } else {
                         res += token.text;
@@ -641,7 +650,7 @@ export default class Formatter {
                     resultSize = Math.max(resultSize, res.length);
                 }
 
-                if (i == end) {
+                if (i === end) {
                     ++exceed;
                     column[l] = -1;
                     info.tokens.splice(0, end);
@@ -653,7 +662,7 @@ export default class Formatter {
             // Second pass: align
             for (let l = 0; l < rangeSize; ++l) {
                 let i = column[l];
-                if (i == -1) {
+                if (i === -1) {
                     continue;
                 }
 
@@ -662,7 +671,7 @@ export default class Formatter {
 
                 let op = info.tokens[i].text;
                 if (op.length < operatorSize) {
-                    if (configOP == 'right') {
+                    if (configOP === 'right') {
                         op = whitespace(operatorSize - op.length) + op;
                     } else {
                         op = op + whitespace(operatorSize - op.length);
@@ -674,7 +683,7 @@ export default class Formatter {
                     padding = whitespace(resultSize - res.length);
                 }
 
-                if (info.tokens[i].type == TokenType.Comma) {
+                if (info.tokens[i].type === TokenType.Comma) {
                     res += op;
                     if (i < info.tokens.length - 1) {
                         res += padding + ' '; // Ensure there's one space after comma.
@@ -693,7 +702,10 @@ export default class Formatter {
                                 --z;
                             }
                             res =
-                                res.substring(0, z + 1) + padding + res.substring(z + 1) + op;
+                                res.substring(0, z + 1) +
+                                padding +
+                                res.substring(z + 1) +
+                                op;
                         } else {
                             res = res + op;
                             if (i < info.tokens.length - 1) {
@@ -734,7 +746,7 @@ export default class Formatter {
                     result[l] =
                         res +
                         whitespace(resultSize - res.length + configComment) +
-                        info.tokens.pop().text;
+                        info.tokens.pop()?.text;
                 }
             }
         }

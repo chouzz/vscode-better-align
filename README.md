@@ -1,70 +1,105 @@
-# vscode-better-align README
+# Better Align for Visual Studio Code
 
-This is the README for your extension "vscode-better-align". After writing up a brief description, we recommend including the following sections.
+[![The MIT License](https://badgen.net/gitlab/license/gitlab-org/omnibus-gitlab)](https://badgen.net/gitlab/license/gitlab-org/omnibus-gitlab)
+[![GitHub](https://flat.badgen.net/github/release/chouzz/vscode-better-align)](https://github.com/chouzz/vscode-better-align/releases)
+[![Visual Studio Marketplace](https://vsmarketplacebadge.apphb.com/installs-short/Chouzz.vscode-better-align.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Chouzz.vscode-better-align)
+[![GithubActions](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)
+
+Better vertical alignment with/without selection in any language for any characters or words.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- Allow align code in any language
+- Align code by any characters(Default`:`,`=`,`+=`,`-=`,`*=`,`/=`,`=>`)
+- Smart align with or without selection
+- Auto align after you type words
 
-For example if there is an image subfolder under your extension project workspace:
+## Usage
 
-\!\[feature X\]\(images/feature-x.png\)
+Place your cursor at where you want your code to be aligned, and use shortcut `alt + A` or invoke the `Align` command via Command Palette.
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Screenshots
 
-## Requirements
+![auto-align-characters.gif](./images/auto-align-characters.gif)
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Extension Configuration
 
-## Extension Settings
+### `alignment.surroundSpace`
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+Default value:
 
-For example:
+```
+alignment.surroundSpace : {
+  "colon"      : [0, 1], // The first number specify how much space to add to the left, can be negative.
+                         // The second number is how much space to the right, can be negative.
+  "assignment" : [1, 1], // The same as above.
+  "arrow"      : [1, 1], // The same as above.
+  "comment"    : 2       // Special how much space to add between the trailing comment and the code.
+                         // If this value is negative, it means don't align the trailing comment.
+}
+```
 
-This extension contributes the following settings:
+```
+// Orignal code
+var abc = {
+  hello:      1
+  ,my :2//comment
+  ,friend:   3      // comment
+}
 
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
+// "colon": [0, 1]
+// "comment": 2
+var abc = {
+    hello : 1
+  , my    : 2  // comment
+  , friend: 3  // comment
+}
 
-## Known Issues
+// "colon": [1, 2]
+// "comment": 4
+var abc = {
+    hello  :  1
+  , my     :  2    // comment
+  , friend :  3    // comment
+}
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+// "colon": [-1, 3]
+// "comment": 2
+var abc = {
+    hello:    1
+  , my:       2  // comment
+  , friend:   3  // comment
+}
 
-## Release Notes
+// "colon": [-1, -1]
+// "comment": 2
+var abc = {
+     hello:1
+  ,     my:2  //comment
+  , friend:3  // comment
+}
 
-Users appreciate release notes as you update your extension.
 
-### 1.0.0
+// Orignal code
+$data = array(
+    'text' => 'something',
+    'here is another' => 'sample'
+);
 
-Initial release of ...
+// "arrow": [1, 3]
+$data = array(
+    'text'            =>   'something',
+    'here is another' =>   'sample'
+);
 
-### 1.0.1
+```
 
-Fixed issue #.
+## Issues/Contribution
 
-### 1.1.0
+If you've found a bug, please file at <https://github.com/chouzz/vscode-innosetup/issues>.
 
-Added features X, Y, and Z.
+If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-innosetup) and submit pull requests.
 
------------------------------------------------------------------------------------------------------------
-## Following extension guidelines
+## License
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on macOS or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+This work is licensed under [Apache License 2.0](https://opensource.org/licenses/Apache-2.0)
