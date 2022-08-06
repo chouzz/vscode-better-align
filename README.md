@@ -98,7 +98,7 @@ $data = array(
 
 If you've found a bug, please file at <https://github.com/chouzz/vscode-innosetup/issues>.
 
-If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-innosetup) and submit pull requests.
+If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-better-aligin/issues) and submit pull requests.
 
 ## License
 
