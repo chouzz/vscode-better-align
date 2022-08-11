@@ -38,9 +38,9 @@
 		],
 		"configuration": {
 			"type": "object",
-			"title": "Alignment configuration",
+			"title": "Better Align",
 			"properties": {
-				"alignment.operatorPadding": {
+				"betterAlign.operatorPadding": {
 					"type": "string",
 					"enum": [
 						"left",
@@ -49,7 +49,7 @@
 					"default": "right",
 					"description": "Control where to insert space to align different length operators (e.g. aligning = += *= ...)"
 				},
-				"alignment.surroundSpace": {
+				"betterAlign.surroundSpace": {
 					"type": "object",
 					"default": {
 						"colon": [
@@ -68,7 +68,7 @@
 					},
 					"description": "Specify how many spaces to insert around the operator."
 				},
-				"alignment.indentBase": {
+				"betterAlign.indentBase": {
 					"type": "string",
 					"enum": [
 						"firstline",
@@ -77,12 +77,17 @@
 					],
 					"default": "firstline",
 					"description": "firstline: Change indent of all lines to the firstline.\n activeline: Change intent of all lines to the activeline.\n dontchange: Don't change line indent, only aligns those lines with same indentation."
+				},
+				"betterAlign.alignAfterTypeEnter": {
+					"type":"boolean",
+					"default": false,
+					"description": "Auto align current text near the cursor after type enter in editor"
 				}
 			}
 		},
 		"configurationDefaults": {
 			"[shellscript]": {				
-				"alignment.surroundSpace": {
+				"betterAlign.surroundSpace": {
 					"colon": [ 0, 1 ],
 					"assignment": [ -1, -1 ],
 					"arrow":[ 1, 1 ],
