@@ -463,7 +463,9 @@ export default class Formatter {
                 }
             }
         }
-
+        if (!anchorLine.tokens) {
+            return [];
+        }
         if (anchorLine.tokens[0].type === TokenType.Whitespace) {
             indentation = anchorLine.tokens[0].text;
         } else {
