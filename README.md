@@ -12,7 +12,7 @@ Better vertical alignment with/without selection in any language for any charact
 - Allow align code in any language
 - Align code by any characters(Default`:`,`=`,`+=`,`-=`,`*=`,`/=`,`=>`)
 - Smart align with or without selection
-- Auto align after you type words
+- Auto align after you type enter
 
 ## Usage
 
