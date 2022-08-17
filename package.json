@@ -29,6 +29,7 @@
 		"onCommand:vscode-better-align.align"
 	],
 	"main": "./dist/extension.js",
+	"browser": "./dist/web/extension.js",
 	"contributes": {
 		"commands": [
 			{
@@ -105,9 +106,10 @@
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run package",
-		"compile": "webpack",
+		"compile": "webpack && npm run compile-web",
 		"watch": "webpack --watch",
-		"package": "webpack --mode production --devtool hidden-source-map",
+		"compile-web": "webpack --config webpack.web.config.js",
+		"package": "webpack --mode production --devtool hidden-source-map && npm run compile-web",
 		"compile-tests": "tsc -p . --outDir out",
 		"watch-tests": "tsc -p . -w --outDir out",
 		"pretest": "npm run compile-tests && npm run compile && npm run lint",
