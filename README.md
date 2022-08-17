@@ -1,6 +1,6 @@
 # Better Align for Visual Studio Code
 
-[![The MIT License](https://badgen.net/gitlab/license/gitlab-org/omnibus-gitlab)](https://badgen.net/gitlab/license/gitlab-org/omnibus-gitlab)
+[![The MIT License](https://badgen.net/github/license/cerner/terra-framework)](https://badgen.net/github/license/cerner/terra-framework)
 [![GitHub](https://flat.badgen.net/github/release/chouzz/vscode-better-align)](https://github.com/chouzz/vscode-better-align/releases)
 [![Visual Studio Marketplace](https://vsmarketplacebadge.apphb.com/installs-short/Chouzz.vscode-better-align.svg?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=Chouzz.vscode-better-align)
 [![GithubActions](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)
