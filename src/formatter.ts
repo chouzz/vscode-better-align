@@ -132,7 +132,7 @@ export default class Formatter {
     protected editor: vscode.TextEditor;
 
     protected getConfig() {
-        let defaultConfig = vscode.workspace.getConfiguration('alignment');
+        let defaultConfig = vscode.workspace.getConfiguration('betterAlign');
         let langConfig: any = null;
 
         try {
@@ -144,7 +144,7 @@ export default class Formatter {
         return {
             get: function (key: any, defaultValue?: any): any {
                 if (langConfig) {
-                    var key1 = 'alignment.' + key;
+                    var key1 = 'betterAlign.' + key;
                     if (langConfig.hasOwnProperty(key1)) {
                         return langConfig[key1];
                     }

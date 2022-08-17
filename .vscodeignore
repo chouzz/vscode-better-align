@@ -4,8 +4,10 @@ out/**
 node_modules/**
 src/**
 .gitignore
+.github/**
 .yarnrc
 webpack.config.js
+webpack.web.config.js
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json
