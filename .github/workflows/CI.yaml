@@ -34,6 +34,9 @@ jobs:
       - name: Compile Sources
         run: npm run compile
 
+      - name: Run tests
+        run: npm run test
+
       - name: Run Linter
         run: npm run lint
 
