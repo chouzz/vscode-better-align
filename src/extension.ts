@@ -1,6 +1,6 @@
 'use strict';
 import * as vscode from 'vscode';
-import Formatter from './formatter';
+import { Formatter } from './formatter';
 
 export function activate(context: vscode.ExtensionContext) {
     const formatter = new Formatter();
