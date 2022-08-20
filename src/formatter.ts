@@ -30,7 +30,7 @@ interface LineInfo {
     tokens: Token[];
 }
 
-interface LineRange {
+export interface LineRange {
     anchor: number;
     infos: LineInfo[];
 }
@@ -46,7 +46,7 @@ function whitespace(count: number) {
     return new Array(count + 1).join(' ');
 }
 
-export default class Formatter {
+export class Formatter {
     /* Align:
      *   operators = += -= *= /= :
      *   trailling comment
@@ -212,8 +212,13 @@ export default class Formatter {
                 currTokenType = TokenType.Word;
                 nextSeek = 2;
             } else if (
-                (char === '+' || char === '-' || char === '*' || char === '/') &&
-                next === '='
+                // Math operators
+                (char === '+' || char === '-' || char === '*' || char === '/' || char === "%" || // FIXME: Find a way to work with the `**` operator
+                // Bitwise operators
+                char === "~" || char === "|" || char === "^" || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
+                // Other operators 
+                char === "."
+                ) && next === '='
             ) {
                 currTokenType = TokenType.Assignment;
                 nextSeek = 2;
@@ -747,7 +752,7 @@ export default class Formatter {
                     let res = result[l];
                     result[l] =
                         res +
-                        whitespace(resultSize - res.length + configComment) +
+                        whitespace (resultSize - res.length + configComment) +
                         info.tokens.pop()?.text;
                 }
             }
