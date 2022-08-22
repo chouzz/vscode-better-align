@@ -18,7 +18,7 @@ suite('Formatter Test Suite', () => {
     if (!editor) {
         return;
     }
-    test('Formatter::should format comment like / and #', () => {
+    test('Formatter::should format assignment like =', () => {
         editor.selection = new vscode.Selection(6, 0, 6, 0);
         const formatter = new FakeFormatter();
         const ranges = formatter.getLineRanges(editor);
