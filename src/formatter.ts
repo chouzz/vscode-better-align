@@ -23,7 +23,7 @@ interface Token {
     text: string;
 }
 
-interface LineInfo {
+export interface LineInfo {
     line: vscode.TextLine;
     sgfntTokenType: TokenType;
     sgfntTokens: TokenType[];
@@ -36,7 +36,7 @@ export interface LineRange {
 }
 
 const REG_WS = /\s/;
-const BRACKET_PAIR:any = {
+const BRACKET_PAIR: any = {
     '{': '}',
     '[': ']',
     '(': ')',
@@ -56,26 +56,39 @@ export class Formatter {
     public process(editor: vscode.TextEditor): void {
         this.editor = editor;
 
-        var ranges: LineRange[] = [];
+        // Get line ranges
+        const ranges = this.getLineRanges(editor);
 
+        // Format
+        let formatted: string[][] = [];
+        for (let range of ranges) {
+            formatted.push(this.format(range));
+        }
+
+        // Apply
+        editor.edit((editBuilder) => {
+            for (let i = 0; i < ranges.length; ++i) {
+                var infos = ranges[i].infos;
+                var lastline = infos[infos.length - 1].line;
+                var location = new vscode.Range(infos[0].line.lineNumber, 0, lastline.lineNumber, lastline.text.length);
+
+                editBuilder.replace(location, formatted[i].join('\n'));
+            }
+        });
+    }
+
+    protected editor: vscode.TextEditor;
+
+    protected getLineRanges(editor: vscode.TextEditor): LineRange[] {
+        var ranges: LineRange[] = [];
         editor.selections.forEach((sel) => {
-            const indentBase = this.getConfig().get(
-                'indentBase',
-                'firstline',
-            ) as string;
+            const indentBase = this.getConfig().get('indentBase', 'firstline') as string;
             const importantIndent: boolean = indentBase === 'dontchange';
 
             let res: LineRange;
             if (sel.isSingleLine) {
                 // If this selection is single line. Look up and down to search for the similar neighbour
-                ranges.push(
-                    this.narrow(
-                        0,
-                        editor.document.lineCount - 1,
-                        sel.active.line,
-                        importantIndent,
-                    ),
-                );
+                ranges.push(this.narrow(0, editor.document.lineCount - 1, sel.active.line, importantIndent));
             } else {
                 // Otherwise, narrow down the range where to align
                 let start = sel.start.line;
@@ -89,10 +102,7 @@ export class Formatter {
                         break;
                     }
 
-                    if (
-                        res.infos[0] &&
-                        res.infos[0].sgfntTokenType !== TokenType.Invalid
-                    ) {
+                    if (res.infos[0] && res.infos[0].sgfntTokenType !== TokenType.Invalid) {
                         ranges.push(res);
                     }
 
@@ -104,41 +114,15 @@ export class Formatter {
                 }
             }
         });
-
-        // Format
-        let formatted: string[][] = [];
-        for (let range of ranges) {
-
-            formatted.push(this.format(range));
-        }
-
-        // Apply
-        editor.edit((editBuilder) => {
-            for (let i = 0; i < ranges.length; ++i) {
-                var infos = ranges[i].infos;
-                var lastline = infos[infos.length - 1].line;
-                var location = new vscode.Range(
-                    infos[0].line.lineNumber,
-                    0,
-                    lastline.lineNumber,
-                    lastline.text.length,
-                );
-
-                editBuilder.replace(location, formatted[i].join('\n'));
-            }
-        });
+        return ranges;
     }
-
-    protected editor: vscode.TextEditor;
 
     protected getConfig() {
         let defaultConfig = vscode.workspace.getConfiguration('betterAlign');
         let langConfig: any = null;
 
         try {
-            langConfig = vscode.workspace
-                .getConfiguration()
-                .get(`[${this.editor.document.languageId}]`) as any;
+            langConfig = vscode.workspace.getConfiguration().get(`[${this.editor.document.languageId}]`) as any;
         } catch (e) {}
 
         return {
@@ -188,19 +172,14 @@ export class Formatter {
                 currTokenType = TokenType.EndOfBlock;
             } else if (
                 char === '/' &&
-                ((next === '/' &&
-                    (pos > 0 ? text.charAt(pos - 1) : '') !== ':') || // only `//` but not `://`
+                ((next === '/' && (pos > 0 ? text.charAt(pos - 1) : '') !== ':') || // only `//` but not `://`
                     next === '*')
             ) {
                 currTokenType = TokenType.Comment;
             } else if (char === ':' && next !== ':') {
                 currTokenType = TokenType.Colon;
             } else if (char === ',') {
-                if (
-                    lt.tokens.length === 0 ||
-                    (lt.tokens.length === 1 &&
-                        lt.tokens[0].type === TokenType.Whitespace)
-                ) {
+                if (lt.tokens.length === 0 || (lt.tokens.length === 1 && lt.tokens[0].type === TokenType.Whitespace)) {
                     currTokenType = TokenType.CommaAsWord; // Comma-first style
                 } else {
                     currTokenType = TokenType.Comma;
@@ -213,12 +192,18 @@ export class Formatter {
                 nextSeek = 2;
             } else if (
                 // Math operators
-                (char === '+' || char === '-' || char === '*' || char === '/' || char === "%" || // FIXME: Find a way to work with the `**` operator
-                // Bitwise operators
-                char === "~" || char === "|" || char === "^" || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
-                // Other operators 
-                char === "."
-                ) && next === '='
+                (char === '+' ||
+                    char === '-' ||
+                    char === '*' ||
+                    char === '/' ||
+                    char === '%' || // FIXME: Find a way to work with the `**` operator
+                    // Bitwise operators
+                    char === '~' ||
+                    char === '|' ||
+                    char === '^' || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
+                    // Other operators
+                    char === '.') &&
+                next === '='
             ) {
                 currTokenType = TokenType.Assignment;
                 nextSeek = 2;
@@ -232,10 +217,7 @@ export class Formatter {
                 if (tokenStartPos !== -1) {
                     lt.tokens.push({
                         type: lastTokenType,
-                        text: textline.text.substr(
-                            tokenStartPos,
-                            pos - tokenStartPos,
-                        ),
+                        text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
                     });
                 }
 
@@ -276,10 +258,7 @@ export class Formatter {
                     let bracket = text.charAt(pos);
                     if (bracket === char) {
                         ++bracketCount;
-                    } else if (
-                        bracket === BRACKET_PAIR[char] &&
-                        text.charAt(pos - 1) !== '\\'
-                    ) {
+                    } else if (bracket === BRACKET_PAIR[char] && text.charAt(pos - 1) !== '\\') {
                         if (bracketCount === 1) {
                             break;
                         } else {
@@ -300,10 +279,7 @@ export class Formatter {
                 } else if (next === '*') {
                     ++pos;
                     while (pos < text.length) {
-                        if (
-                            text.charAt(pos) === '*' &&
-                            text.charAt(pos + 1) === '/'
-                        ) {
+                        if (text.charAt(pos) === '*' && text.charAt(pos + 1) === '/') {
                             ++pos;
                             currTokenType = TokenType.Word;
                             break;
@@ -357,7 +333,7 @@ export class Formatter {
 
     protected arrayAnd(array1: TokenType[], array2: TokenType[]): TokenType[] {
         var res: TokenType[] = [];
-        var map:any = {};
+        var map: any = {};
         for (var i = 0; i < array1.length; ++i) {
             map[array1[i]] = true;
         }
@@ -377,12 +353,7 @@ export class Formatter {
      * 3. Bracket / Brace usually means boundary.
      * 4. Unsimilar line is boundary.
      */
-    protected narrow(
-        start: number,
-        end: number,
-        anchor: number,
-        importantIndent: boolean,
-    ): LineRange {
+    protected narrow(start: number, end: number, anchor: number, importantIndent: boolean): LineRange {
         let anchorToken = this.tokenize(anchor);
         let range = { anchor, infos: [anchorToken] };
 
@@ -481,10 +452,7 @@ export class Formatter {
             if (info.tokens[0].type === TokenType.Whitespace) {
                 info.tokens.shift();
             }
-            if (
-                info.tokens.length > 1 &&
-                info.tokens[info.tokens.length - 1].type === TokenType.Whitespace
-            ) {
+            if (info.tokens.length > 1 && info.tokens[info.tokens.length - 1].type === TokenType.Whitespace) {
                 info.tokens.pop();
             }
         }
@@ -504,10 +472,7 @@ export class Formatter {
             }
 
             if (count < -1) {
-                firstWordLength = Math.max(
-                    firstWordLength,
-                    info.tokens[0].text.length,
-                );
+                firstWordLength = Math.max(firstWordLength, info.tokens[0].text.length);
             }
         }
         if (firstWordLength > 0) {
@@ -540,9 +505,7 @@ export class Formatter {
                     if (info.tokens[0].text.length !== firstWordLength) {
                         let ws = {
                             type: TokenType.Insertion,
-                            text: whitespace(
-                                firstWordLength - info.tokens[0].text.length,
-                            ),
+                            text: whitespace(firstWordLength - info.tokens[0].text.length),
                         };
                         if (info.tokens[0].type === TokenType.CommaAsWord) {
                             info.tokens.unshift(ws);
@@ -558,18 +521,12 @@ export class Formatter {
         for (let info of range.infos) {
             let i = 1;
             while (i < info.tokens.length) {
-                if (
-                    info.tokens[i].type === info.sgfntTokenType ||
-                    info.tokens[i].type === TokenType.Comma
-                ) {
+                if (info.tokens[i].type === info.sgfntTokenType || info.tokens[i].type === TokenType.Comma) {
                     if (info.tokens[i - 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i - 1, 1);
                         --i;
                     }
-                    if (
-                        info.tokens[i + 1] &&
-                        info.tokens[i + 1].type === TokenType.Whitespace
-                    ) {
+                    if (info.tokens[i + 1] && info.tokens[i + 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i + 1, 1);
                     }
                 }
@@ -581,7 +538,7 @@ export class Formatter {
         const configOP = config.get('operatorPadding') as string;
         const configWS = config.get('surroundSpace');
         const stt = TokenType[range.infos[0].sgfntTokenType].toLowerCase();
-        const configDef:any = {
+        const configDef: any = {
             colon: [0, 1],
             assignment: [1, 1],
             comment: 2,
@@ -620,15 +577,9 @@ export class Formatter {
                 let res = result[l];
 
                 // Bail out if we reach to the trailing comment
-                if (
-                    tokenSize > 1 &&
-                    info.tokens[tokenSize - 1].type === TokenType.Comment
-                ) {
+                if (tokenSize > 1 && info.tokens[tokenSize - 1].type === TokenType.Comment) {
                     hasTrallingComment = true;
-                    if (
-                        tokenSize > 2 &&
-                        info.tokens[tokenSize - 2].type === TokenType.Whitespace
-                    ) {
+                    if (tokenSize > 2 && info.tokens[tokenSize - 2].type === TokenType.Whitespace) {
                         end = tokenSize - 2;
                     } else {
                         end = tokenSize - 1;
@@ -638,14 +589,8 @@ export class Formatter {
                 for (; i < end; ++i) {
                     let token = info.tokens[i];
                     // Vertical align will occur at significant operator or subsequent comma
-                    if (
-                        token.type === info.sgfntTokenType ||
-                        (token.type === TokenType.Comma && i !== 0)
-                    ) {
-                        operatorSize = Math.max(
-                            operatorSize,
-                            token.text.length,
-                        );
+                    if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0)) {
+                        operatorSize = Math.max(operatorSize, token.text.length);
                         break;
                     } else {
                         res += token.text;
@@ -708,11 +653,7 @@ export class Formatter {
                                 }
                                 --z;
                             }
-                            res =
-                                res.substring(0, z + 1) +
-                                padding +
-                                res.substring(z + 1) +
-                                op;
+                            res = res.substring(0, z + 1) + padding + res.substring(z + 1) + op;
                         } else {
                             res = res + op;
                             if (i < info.tokens.length - 1) {
@@ -750,10 +691,7 @@ export class Formatter {
                 let info = range.infos[l];
                 if (info.tokens.length) {
                     let res = result[l];
-                    result[l] =
-                        res +
-                        whitespace (resultSize - res.length + configComment) +
-                        info.tokens.pop()?.text;
+                    result[l] = res + whitespace(resultSize - res.length + configComment) + info.tokens.pop()?.text;
                 }
             }
         }
