@@ -4,11 +4,9 @@
       // Only some comments
         // Only some comments
 
-
 var abc = 123;
 var fsdafsf = 32423,
 fasdf = 1231321;
-
 
 var abc=123;
   var fsdafsf=32423,
@@ -17,15 +15,14 @@ var abc=123;
   fasdf=1231321;
 fasdf=1231321;
 
-
 export fdafas=fdasfas;
 export fs=fasfdsfadsa;
 export fadsfasf=fadsjfkdasf;
 export fadsfa=fadfdasfadsf;
 
-    let fdsafa:fadsf = fdsaf;
-    let lt:LineInfo = {
-      line:textline
-      , sgfntTokenType:TokenType.Invalid
-      , tokens:[]
-    };
+let fdsafa:fadsf = fdsaf;
+let lt:LineInfo = {
+  line:textline
+  , sgfntTokenType:TokenType.Invalid
+  , tokens:[]
+};
