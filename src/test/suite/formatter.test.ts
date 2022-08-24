@@ -26,4 +26,17 @@ suite('Formatter Test Suite', () => {
         const expect = ['var abc     = 123;', 'var fsdafsf = 32423,', '    fasdf   = 1231321;'];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should format colon like :', () => {
+        editor.selection = new vscode.Selection(12, 0, 12, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '    line          : textline',
+            '  , sgfntTokenType: TokenType.Invalid',
+            '  , tokens        : []',
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });
