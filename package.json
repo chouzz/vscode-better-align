@@ -10,6 +10,10 @@
         "name": "Chouzz",
         "url": "https://github.com/chouzz"
     },
+	"galleryBanner": {
+		"color": "#C80000",
+    	"theme": "light"
+	},
 	"bugs": {
 		"url": "https://github.com/chouzz/vscode-better-align/issues",
 		"email": "zhouhua25@qq.com"
