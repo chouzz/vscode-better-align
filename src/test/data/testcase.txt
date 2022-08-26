@@ -8,18 +8,6 @@ var abc = 123;
 var fsdafsf = 32423,
 fasdf = 1231321;
 
-var abc=123;
-  var fsdafsf=32423,
-    var fsdafsf=32423,
-    fasdf=1231321;
-  fasdf=1231321;
-fasdf=1231321;
-
-export fdafas=fdasfas;
-export fs=fasfdsfadsa;
-export fadsfasf=fadsjfkdasf;
-export fadsfa=fadfdasfadsf;
-
 let fdsafa:fadsf = fdsaf;
 let lt:LineInfo = {
   line:textline
