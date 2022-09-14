@@ -32,11 +32,11 @@ const extensionConfig = {
       {
         test: /\.ts$/,
         exclude: /node_modules/,
-        use: [
-          {
-            loader: 'ts-loader'
-          }
-        ]
+        loader: 'esbuild-loader',
+        options: {
+          loader: 'ts',
+          target: 'es2015'
+        }
       }
     ]
   },
