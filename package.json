@@ -1,139 +1,149 @@
 {
   "name": "vscode-better-align",
-	"displayName": "Better Align",
-	"description": "Better vertical alignment with/without selection in any language for any characters or words.",
-	"version": "1.3.0",
-	"icon": "images/icon.png",
-	"publisher": "chouzz",
-    "license": "SEE LICENSE IN LICENSE",
-	"author": {
-        "name": "Chouzz",
-        "url": "https://github.com/chouzz"
+  "displayName": "Better Align",
+  "description": "Better vertical alignment with/without selection in any language for any characters or words.",
+  "version": "1.3.0",
+  "icon": "images/icon.png",
+  "publisher": "chouzz",
+  "license": "SEE LICENSE IN LICENSE",
+  "author": {
+    "name": "Chouzz",
+    "url": "https://github.com/chouzz"
+  },
+  "galleryBanner": {
+    "color": "#C80000",
+    "theme": "light"
+  },
+  "bugs": {
+    "url": "https://github.com/chouzz/vscode-better-align/issues",
+    "email": "zhouhua25@qq.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chouzz/vscode-better-align.git"
+  },
+  "engines": {
+    "vscode": "^1.47.0"
+  },
+  "categories": [
+    "Formatters"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:vscode-better-align.align"
+  ],
+  "main": "./dist/extension.js",
+  "browser": "./dist/web/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "vscode-better-align.align",
+        "title": "Align"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Better Align",
+      "properties": {
+        "betterAlign.operatorPadding": {
+          "type": "string",
+          "enum": [
+            "left",
+            "right"
+          ],
+          "default": "right",
+          "description": "Control where to insert space to align different length operators (e.g. aligning = += *= ...)"
+        },
+        "betterAlign.surroundSpace": {
+          "type": "object",
+          "default": {
+            "colon": [
+              0,
+              1
+            ],
+            "assignment": [
+              1,
+              1
+            ],
+            "arrow": [
+              1,
+              1
+            ],
+            "comment": 2
+          },
+          "description": "Specify how many spaces to insert around the operator."
+        },
+        "betterAlign.indentBase": {
+          "type": "string",
+          "enum": [
+            "firstline",
+            "activeline",
+            "dontchange"
+          ],
+          "default": "firstline",
+          "description": "firstline: Change indent of all lines to the firstline.\n activeline: Change intent of all lines to the activeline.\n dontchange: Don't change line indent, only aligns those lines with same indentation."
+        },
+        "betterAlign.alignAfterTypeEnter": {
+          "type": "boolean",
+          "default": false,
+          "description": "Auto align current text near the cursor after type enter in editor"
+        }
+      }
     },
-	"galleryBanner": {
-		"color": "#C80000",
-    	"theme": "light"
-	},
-	"bugs": {
-		"url": "https://github.com/chouzz/vscode-better-align/issues",
-		"email": "zhouhua25@qq.com"
-	  },
-	  "repository": {
-		"type": "git",
-		"url": "https://github.com/chouzz/vscode-better-align.git"
-	  },
-	"engines": {
-		"vscode": "^1.47.0"
-	},
-	"categories": [
-		"Formatters"
-	],
-	"activationEvents": [
-		"onStartupFinished",
-		"onCommand:vscode-better-align.align"
-	],
-	"main": "./dist/extension.js",
-	"browser": "./dist/web/extension.js",
-	"contributes": {
-		"commands": [
-			{
-				"command": "vscode-better-align.align",
-				"title": "Align"
-			}
-		],
-		"configuration": {
-			"type": "object",
-			"title": "Better Align",
-			"properties": {
-				"betterAlign.operatorPadding": {
-					"type": "string",
-					"enum": [
-						"left",
-						"right"
-					],
-					"default": "right",
-					"description": "Control where to insert space to align different length operators (e.g. aligning = += *= ...)"
-				},
-				"betterAlign.surroundSpace": {
-					"type": "object",
-					"default": {
-						"colon": [
-							0,
-							1
-						],
-						"assignment": [
-							1,
-							1
-						],
-						"arrow":[
-							1,
-							1
-						],
-						"comment": 2
-					},
-					"description": "Specify how many spaces to insert around the operator."
-				},
-				"betterAlign.indentBase": {
-					"type": "string",
-					"enum": [
-						"firstline",
-						"activeline",
-						"dontchange"
-					],
-					"default": "firstline",
-					"description": "firstline: Change indent of all lines to the firstline.\n activeline: Change intent of all lines to the activeline.\n dontchange: Don't change line indent, only aligns those lines with same indentation."
-				},
-				"betterAlign.alignAfterTypeEnter": {
-					"type":"boolean",
-					"default": false,
-					"description": "Auto align current text near the cursor after type enter in editor"
-				}
-			}
-		},
-		"configurationDefaults": {
-			"[shellscript]": {				
-				"betterAlign.surroundSpace": {
-					"colon": [ 0, 1 ],
-					"assignment": [ -1, -1 ],
-					"arrow":[ 1, 1 ],
-					"comment": 2
-				}
-			}
-		},
-		"keybindings": [
-			{
-			  "command": "vscode-better-align.align",
-			  "key": "alt+a",
-			  "when": "editorTextFocus"
-			}
-		  ]
-	},
-	"scripts": {
-		"vscode:prepublish": "npm run package",
-		"compile": "webpack && npm run compile-web",
-		"watch": "webpack --watch",
-		"compile-web": "webpack --config webpack.web.config.js",
-		"package": "webpack --mode production --devtool hidden-source-map && npm run compile-web",
-		"compile-tests": "tsc -p . --outDir out",
-		"watch-tests": "tsc -p . -w --outDir out",
-		"pretest": "npm run compile-tests && npm run compile && npm run lint",
-		"lint": "eslint src --ext ts",
-		"test": "node ./out/test/runTest.js"
-	},
-	"devDependencies": {
-		"@types/vscode": "^1.47.0",
-		"@types/glob": "^8.0.0",
-		"@types/mocha": "^9.1.1",
-		"@types/node": "18.x",
-		"@typescript-eslint/eslint-plugin": "^5.36.2",
-		"@typescript-eslint/parser": "^5.36.1",
-		"eslint": "^8.23.0",
-		"glob": "^8.0.3",
-		"mocha": "^10.0.0",
-		"typescript": "^4.7.4",
-		"ts-loader": "^9.3.1",
-		"webpack": "^5.73.0",
-		"webpack-cli": "^4.10.0",
-		"@vscode/test-electron": "^2.1.5"
-	}
+    "configurationDefaults": {
+      "[shellscript]": {
+        "betterAlign.surroundSpace": {
+          "colon": [
+            0,
+            1
+          ],
+          "assignment": [
+            -1,
+            -1
+          ],
+          "arrow": [
+            1,
+            1
+          ],
+          "comment": 2
+        }
+      }
+    },
+    "keybindings": [
+      {
+        "command": "vscode-better-align.align",
+        "key": "alt+a",
+        "when": "editorTextFocus"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack && npm run compile-web",
+    "watch": "webpack --watch",
+    "compile-web": "webpack --config webpack.web.config.js",
+    "package": "webpack --mode production --devtool hidden-source-map && npm run compile-web",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.0.0",
+    "@types/mocha": "^9.1.1",
+    "@types/node": "18.x",
+    "@types/vscode": "^1.47.0",
+    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "@typescript-eslint/parser": "^5.36.1",
+    "@vscode/test-electron": "^2.1.5",
+    "esbuild-loader": "^2.20.0",
+    "eslint": "^8.23.0",
+    "glob": "^8.0.3",
+    "mocha": "^10.0.0",
+    "ts-loader": "^9.3.1",
+    "typescript": "^4.7.4",
+    "webpack": "^5.73.0",
+    "webpack-cli": "^4.10.0"
+  }
 }
