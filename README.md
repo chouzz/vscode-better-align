@@ -28,7 +28,7 @@ Place your cursor at where you want your code to be aligned, and use shortcut `a
 
 Default value:
 
-```
+```json
 betterAlign.surroundSpace : {
   "colon"      : [0, 1], // The first number specify how much space to add to the left, can be negative.
                          // The second number is how much space to the right, can be negative.
@@ -39,7 +39,7 @@ betterAlign.surroundSpace : {
 }
 ```
 
-```
+```javascript
 // Orignal code
 var abc = {
   hello:      1
