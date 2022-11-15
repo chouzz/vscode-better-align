@@ -1,3 +1,8 @@
+# v1.3.1 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.1)
+
+- Improve extension stability and quality
+- Update Dependencies
+
 # v1.3.0 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.0)
 
 - Fix commands broken if cursor in empty line
