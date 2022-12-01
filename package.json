@@ -134,7 +134,7 @@
     "@types/mocha": "^9.1.1",
     "@types/node": "18.x",
     "@types/vscode": "^1.47.0",
-    "@typescript-eslint/eslint-plugin": "^5.36.2",
+    "@typescript-eslint/eslint-plugin": "^5.45.0",
     "@typescript-eslint/parser": "^5.40.1",
     "@vscode/test-electron": "^2.1.5",
     "esbuild-loader": "^2.20.0",
