@@ -11,8 +11,8 @@
     "url": "https://github.com/chouzz"
   },
   "galleryBanner": {
-    "color": "#C80000",
-    "theme": "light"
+    "color": "#272729",
+    "theme": "dark"
   },
   "bugs": {
     "url": "https://github.com/chouzz/vscode-better-align/issues",
