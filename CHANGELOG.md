@@ -1,3 +1,8 @@
+# v1.3.2 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.2)
+
+- Add support autohotkey syntax `:=`
+- Update badges for vscode marketplace in readme
+
 # v1.3.1 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.1)
 
 - Improve extension stability and quality
