@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 enum TokenType {
     Invalid,
     Word,
-    Assignment, // = += -= *= /=
+    Assignment, // = += -= *= /= %= ~= |= ^= .= :=
     Arrow, // =>
     Block, // {} [] ()
     PartialBlock, // { [ (
@@ -176,8 +176,6 @@ export class Formatter {
                     next === '*')
             ) {
                 currTokenType = TokenType.Comment;
-            } else if (char === ':' && next !== ':') {
-                currTokenType = TokenType.Colon;
             } else if (char === ',') {
                 if (lt.tokens.length === 0 || (lt.tokens.length === 1 && lt.tokens[0].type === TokenType.Whitespace)) {
                     currTokenType = TokenType.CommaAsWord; // Comma-first style
@@ -202,13 +200,16 @@ export class Formatter {
                     char === '|' ||
                     char === '^' || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
                     // Other operators
-                    char === '.') &&
+                    char === '.' ||
+                    char === ':') &&
                 next === '='
             ) {
                 currTokenType = TokenType.Assignment;
                 nextSeek = 2;
             } else if (char === '=' && next !== '=') {
                 currTokenType = TokenType.Assignment;
+            } else if (char === ':' && next !== ':') {
+                currTokenType = TokenType.Colon;
             } else {
                 currTokenType = TokenType.Word;
             }
