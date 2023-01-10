@@ -39,4 +39,16 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should format assignment like :=', () => {
+        editor.selection = new vscode.Selection(18, 0, 18, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'test    := 1',
+            'teastas := 2',
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });

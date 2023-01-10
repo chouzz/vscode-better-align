@@ -14,3 +14,7 @@ let lt:LineInfo = {
   , sgfntTokenType:TokenType.Invalid
   , tokens:[]
 };
+
+// AutoHotKey Syntax
+test := 1
+teastas := 2
