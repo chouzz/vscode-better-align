@@ -1,21 +1,21 @@
 import * as vscode from 'vscode';
 
 enum TokenType {
-    Invalid,
-    Word,
-    Assignment, // = += -= *= /= %= ~= |= ^= .= :=
-    Arrow, // =>
-    Block, // {} [] ()
-    PartialBlock, // { [ (
-    EndOfBlock, // } ] )
-    String,
-    PartialString,
-    Comment,
-    Whitespace,
-    Colon,
-    Comma,
-    CommaAsWord,
-    Insertion,
+    Invalid = 'Invalid',
+    Word = 'Word',
+    Assignment = 'Assignment', // = += -= *= /= %= ~= |= ^= .= :=
+    Arrow = 'Arrow', // =>
+    Block = 'Block', // {} [] ()
+    PartialBlock = 'PartialBlock', // { [ (
+    EndOfBlock = 'EndOfBlock', // } ] )
+    String = 'String',
+    PartialString = 'PartialString',
+    Comment = 'Comment',
+    Whitespace = 'Whitespace',
+    Colon = 'Colon',
+    Comma = 'Comma',
+    CommaAsWord = 'CommaAsWord',
+    Insertion = 'Insertion',
 }
 
 interface Token {
@@ -208,6 +208,9 @@ export class Formatter {
                 nextSeek = 2;
             } else if (char === '=' && next !== '=') {
                 currTokenType = TokenType.Assignment;
+            } else if (char === ':' && next === ':') {
+                currTokenType = TokenType.Word;
+                nextSeek = 2;
             } else if (char === ':' && next !== ':') {
                 currTokenType = TokenType.Colon;
             } else {

@@ -18,3 +18,9 @@ let lt:LineInfo = {
 // AutoHotKey Syntax
 test := 1
 teastas := 2
+
+// Php Syntax
+$data = [
+  self::LAUNCHAAA  => 'test',
+  self::WAIT   => 'testtas',
+];

@@ -51,4 +51,16 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should not format double Colon like ::', () => {
+        editor.selection = new vscode.Selection(23, 0, 23, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            `  self::LAUNCHAAA => 'test',`,
+            `  self::WAIT      => 'testtas',`,
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });
