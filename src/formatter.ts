@@ -156,6 +156,7 @@ export class Formatter {
         while (pos < text.length) {
             let char = text.charAt(pos);
             let next = text.charAt(pos + 1);
+            let third = text.charAt(pos + 2);
 
             let currTokenType: TokenType;
 
@@ -185,10 +186,9 @@ export class Formatter {
             } else if (char === '=' && next === '>') {
                 currTokenType = TokenType.Arrow;
                 nextSeek = 2;
-            } else if (char === '=' && next === '=') {
-                currTokenType = TokenType.Word;
-                nextSeek = 2;
             } else if (
+                // Currently we support only known operators,
+                // formatters will not work for unknown operators, we should find a way to support all operators. 
                 // Math operators
                 (char === '+' ||
                     char === '-' ||
@@ -201,11 +201,13 @@ export class Formatter {
                     char === '^' || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
                     // Other operators
                     char === '.' ||
-                    char === ':') &&
+                    char === ':' ||
+                    char === '!' ||
+                    char === '=' ) &&
                 next === '='
             ) {
                 currTokenType = TokenType.Assignment;
-                nextSeek = 2;
+                nextSeek = third === '=' ? 3 : 2;
             } else if (char === '=' && next !== '=') {
                 currTokenType = TokenType.Assignment;
             } else if (char === ':' && next === ':') {

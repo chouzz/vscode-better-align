@@ -24,3 +24,25 @@ $data = [
   self::LAUNCHAAA  => 'test',
   self::WAIT   => 'testtas',
 ];
+
+var abc == 123;
+var fsdafsf == 32423,
+fasdf != 1231321;
+
+var abc === 123;
+var fsdafsf === 32423,
+fasdf !== 1231321;
+
+public function index()
+{
+    $x = 'test';
+    if (
+        $x === 'nott test'
+        || $x === 0
+        || $x !== 'test'
+    ) {
+        return false;
+    } else {
+        return true;
+    }
+}

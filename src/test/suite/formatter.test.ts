@@ -23,7 +23,11 @@ suite('Formatter Test Suite', () => {
         const formatter = new FakeFormatter();
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
-        const expect = ['var abc     = 123;', 'var fsdafsf = 32423,', '    fasdf   = 1231321;'];
+        const expect = [
+            'var abc     = 123;', 
+            'var fsdafsf = 32423,', 
+            '    fasdf   = 1231321;'
+        ];
         assert.deepEqual(actual, expect);
     });
 
@@ -48,6 +52,45 @@ suite('Formatter Test Suite', () => {
         const expect = [
             'test    := 1',
             'teastas := 2',
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should format assignment like == and !=', () => {
+        editor.selection = new vscode.Selection(29, 0, 29, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'var abc     == 123;', 
+            'var fsdafsf == 32423,', 
+            '    fasdf   != 1231321;'
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should format assignment like === and !==', () => {
+        editor.selection = new vscode.Selection(33, 0, 33, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'var abc     === 123;', 
+            'var fsdafsf === 32423,', 
+            '    fasdf   !== 1231321;'
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should format assignment like === and !== with special character', () => {
+        editor.selection = new vscode.Selection(41, 0, 41, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            `           $x === 'nott test'`, 
+            '        || $x === 0', 
+            `        || $x !== 'test'`
         ];
         assert.deepEqual(actual, expect);
     });
