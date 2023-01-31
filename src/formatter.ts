@@ -71,8 +71,12 @@ export class Formatter {
                 var infos = ranges[i].infos;
                 var lastline = infos[infos.length - 1].line;
                 var location = new vscode.Range(infos[0].line.lineNumber, 0, lastline.lineNumber, lastline.text.length);
-
-                editBuilder.replace(location, formatted[i].join('\n'));
+                const eol = editor.document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
+                const replaced = formatted[i].join(eol);
+                if(editor.document.getText(location) === replaced){
+                    continue;
+                }
+                editBuilder.replace(location, replaced);
             }
         });
     }
