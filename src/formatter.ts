@@ -276,6 +276,8 @@ export class Formatter {
                 if (pos >= text.length) {
                     lastTokenType = TokenType.PartialBlock;
                 }
+                // -1 then + nextSeek so keep pos not change in next loop
+                // or we will lost symbols like "] } )"
             }
 
             if (char === '/') {
@@ -463,7 +465,21 @@ export class Formatter {
             }
         }
 
-        // 1. Special treatment for Word-Word-Operator ( e.g. var abc = )
+        /* 1. Special treatment for Word-Word-Operator ( e.g. var abc = )
+        For example, without:
+
+        var abc === 123;                var abc     === 123;
+        var fsdafsf === 32423,  =>      var fsdafsf === 32423,
+        fasdf !== 1231321;              fasdf       !== 1231321;
+
+        with this :
+
+        var abc === 123;                var abc     === 123;
+        var fsdafsf === 32423,  =>      var fsdafsf === 32423,
+        fasdf !== 1231321;                  fasdf   !== 1231321;
+        */
+
+        // Calculate first word's length
         let firstWordLength = 0;
         for (let info of range.infos) {
             let count = 0;
@@ -471,6 +487,10 @@ export class Formatter {
                 if (token.type === info.sgfntTokenType) {
                     count = -count;
                     break;
+                }
+                // Skip calculate word length before block, See https://github.com/chouzz/vscode-better-align/issues/57
+                if (token.type === TokenType.Block) {
+                    continue;
                 }
                 if (token.type !== TokenType.Whitespace) {
                     ++count;
@@ -481,6 +501,8 @@ export class Formatter {
                 firstWordLength = Math.max(firstWordLength, info.tokens[0].text.length);
             }
         }
+
+        // Add white space after the first word 
         if (firstWordLength > 0) {
             let wordSpace: Token = {
                 type: TokenType.Insertion,

@@ -106,4 +106,18 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should format code with block', () => {
+        editor.selection = new vscode.Selection(50, 0, 50, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '$item["venue_id"]    = $venue->id;',
+            '$item["account_id"]  = $venue->parent_id;',
+            '$item["expire_date"] = Carbon::now()->{$carbon_function}();',
+            '$acc_license_data[]  = $item;',
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });
