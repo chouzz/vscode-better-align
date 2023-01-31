@@ -18,6 +18,22 @@ suite('Formatter Test Suite', () => {
     if (!editor) {
         return;
     }
+
+    test('Formatter::should format comment', () => {
+        editor.selection = new vscode.Selection(0, 0, 0, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '  // Only some comments',
+            '  // Only some comments',
+            '  // Only some comments',
+            '  // Only some comments',
+            '  // Only some comments',
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
     test('Formatter::should format assignment like =', () => {
         editor.selection = new vscode.Selection(6, 0, 6, 0);
         const formatter = new FakeFormatter();
@@ -117,6 +133,30 @@ suite('Formatter Test Suite', () => {
             '$item["account_id"]  = $venue->parent_id;',
             '$item["expire_date"] = Carbon::now()->{$carbon_function}();',
             '$acc_license_data[]  = $item;',
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should format comment with words', () => {
+        editor.selection = new vscode.Selection(57, 0, 57, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '    int    myNum;     // Attribute (int variable)',
+            '    string myString;  // Attribute (string variable)'
+        ];
+        assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should format comment with operators', () => {
+        editor.selection = new vscode.Selection(61, 0, 61, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'test    := 1  // Only some comments',
+            'teastas := 2  // Only some comments'
         ];
         assert.deepEqual(actual, expect);
     });
