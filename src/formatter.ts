@@ -452,7 +452,7 @@ export class Formatter {
                 }
             }
         }
-        if (!anchorLine.tokens) {
+        if (!anchorLine.tokens.length) {
             return [];
         }
         if (anchorLine.tokens[0].type === TokenType.Whitespace) {
