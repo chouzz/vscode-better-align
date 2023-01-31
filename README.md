@@ -103,3 +103,7 @@ If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-bett
 ## License
 
 This work is licensed under [Apache License 2.0](https://opensource.org/licenses/Apache-2.0)
+
+## Credit
+
+The codebase is based on [this repository](https://github.com/WarWithinMe/better-align). Thanks @WarWithinMe.
