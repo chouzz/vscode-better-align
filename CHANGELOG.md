@@ -1,5 +1,6 @@
 # v1.4.0 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.0)
 
+- Fix errors align with empty line
 - Fix format with double colon
 - Add support for three character operators
 - Fix incorrect indent during align with blocks
