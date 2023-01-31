@@ -46,3 +46,8 @@ public function index()
         return true;
     }
 }
+
+$item["venue_id"] = $venue->id;
+$item["account_id"] = $venue->parent_id;
+$item["expire_date"] = Carbon::now()->{$carbon_function}();
+$acc_license_data[] = $item;
