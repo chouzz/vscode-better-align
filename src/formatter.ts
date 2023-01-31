@@ -237,7 +237,8 @@ export class Formatter {
                 if (
                     lastTokenType === TokenType.Assignment ||
                     lastTokenType === TokenType.Colon ||
-                    lastTokenType === TokenType.Arrow
+                    lastTokenType === TokenType.Arrow ||
+                    lastTokenType === TokenType.Comment
                 ) {
                     if (lt.sgfntTokens.indexOf(lastTokenType) === -1) {
                         lt.sgfntTokens.push(lastTokenType);
@@ -672,7 +673,12 @@ export class Formatter {
                     if (i < info.tokens.length - 1) {
                         res += padding + ' '; // Ensure there's one space after comma.
                     }
-                } else {
+                // Skip if there is only comment type without any operators.
+                } else if(info.tokens.length === 1 && info.tokens[0].type === TokenType.Comment){
+                    exceed++;
+                    break;
+                 }
+                else {
                     if (configSTT[0] < 0) {
                         // operator will stick with the leftside word
                         if (configSTT[1] < 0) {

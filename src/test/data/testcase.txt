@@ -51,3 +51,12 @@ $item["venue_id"] = $venue->id;
 $item["account_id"] = $venue->parent_id;
 $item["expire_date"] = Carbon::now()->{$carbon_function}();
 $acc_license_data[] = $item;
+
+class MyClass {
+  public:
+    int myNum;  // Attribute (int variable)
+    string myString; // Attribute (string variable)
+};
+
+test := 1        // Only some comments
+teastas := 2 // Only some comments
