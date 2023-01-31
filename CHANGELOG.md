@@ -1,3 +1,12 @@
+# v1.4.0 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.0)
+
+- Fix format with double colon
+- Add support for three character operators
+- Fix incorrect indent during align with blocks
+- Add credit for origin author's contribution
+- Don't edit file if there is no any changes
+- Fix alignment with double slash comment
+
 # v1.3.2 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.2)
 
 - Add support autohotkey syntax `:=`
