@@ -73,7 +73,7 @@ export class Formatter {
                 var location = new vscode.Range(infos[0].line.lineNumber, 0, lastline.lineNumber, lastline.text.length);
                 const eol = editor.document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
                 const replaced = formatted[i].join(eol);
-                if(editor.document.getText(location) === replaced){
+                if (editor.document.getText(location) === replaced) {
                     continue;
                 }
                 editBuilder.replace(location, replaced);
@@ -192,7 +192,7 @@ export class Formatter {
                 nextSeek = 2;
             } else if (
                 // Currently we support only known operators,
-                // formatters will not work for unknown operators, we should find a way to support all operators. 
+                // formatters will not work for unknown operators, we should find a way to support all operators.
                 // Math operators
                 (char === '+' ||
                     char === '-' ||
@@ -207,7 +207,7 @@ export class Formatter {
                     char === '.' ||
                     char === ':' ||
                     char === '!' ||
-                    char === '=' ) &&
+                    char === '=') &&
                 next === '='
             ) {
                 currTokenType = TokenType.Assignment;
@@ -440,7 +440,7 @@ export class Formatter {
 
     protected format(range: LineRange): string[] {
         // 0. Remove indentatioin, and trailing whitespace
-        let indentation = null;
+        let indentation = '';
         let anchorLine = range.infos[0];
         const config = this.getConfig();
 
@@ -455,13 +455,21 @@ export class Formatter {
         if (!anchorLine.tokens.length) {
             return [];
         }
-        if (anchorLine.tokens[0].type === TokenType.Whitespace) {
-            indentation = anchorLine.tokens[0].text;
-        } else {
-            indentation = '';
-        }
 
+        // Get indentation from multiple lines
+        /*
+            fasdf   !== 1231321;    => indentation = 0
+        var abc   === 123;
+        
+            test := 1               => indentation = 4
+            teastas := 2
+
+        */
+        let firstNonSpaceCharIndex = 0;
+        let min = Infinity;
         for (let info of range.infos) {
+            firstNonSpaceCharIndex = info.line.text.search(/\S/);
+            min = Math.min(min, firstNonSpaceCharIndex);
             if (info.tokens[0].type === TokenType.Whitespace) {
                 info.tokens.shift();
             }
@@ -469,7 +477,7 @@ export class Formatter {
                 info.tokens.pop();
             }
         }
-
+        indentation = ' '.repeat(min);
         /* 1. Special treatment for Word-Word-Operator ( e.g. var abc = )
         For example, without:
 
@@ -507,7 +515,7 @@ export class Formatter {
             }
         }
 
-        // Add white space after the first word 
+        // Add white space after the first word
         if (firstWordLength > 0) {
             let wordSpace: Token = {
                 type: TokenType.Insertion,
@@ -673,12 +681,11 @@ export class Formatter {
                     if (i < info.tokens.length - 1) {
                         res += padding + ' '; // Ensure there's one space after comma.
                     }
-                // Skip if there is only comment type without any operators.
-                } else if(info.tokens.length === 1 && info.tokens[0].type === TokenType.Comment){
+                    // Skip if there is only comment type without any operators.
+                } else if (info.tokens.length === 1 && info.tokens[0].type === TokenType.Comment) {
                     exceed++;
                     break;
-                 }
-                else {
+                } else {
                     if (configSTT[0] < 0) {
                         // operator will stick with the leftside word
                         if (configSTT[1] < 0) {

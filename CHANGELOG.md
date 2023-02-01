@@ -7,6 +7,7 @@
 - Add credit for origin author's contribution
 - Don't edit file if there is no any changes
 - Fix alignment with double slash comment
+- Fix add spaces if double align codes
 
 # v1.3.2 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.3.2)
 
