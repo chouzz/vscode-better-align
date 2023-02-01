@@ -160,4 +160,18 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should not format if first line contain space', () => {
+        editor.selection = new vscode.Selection(64, 0, 64, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '       test123  := 123',
+            'global test1    := 13',
+            '       test2332  = 1234',
+            '       test4124 += 124',
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });

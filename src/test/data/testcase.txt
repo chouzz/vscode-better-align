@@ -60,3 +60,8 @@ class MyClass {
 
 test := 1        // Only some comments
 teastas := 2 // Only some comments
+
+       test123  := 123
+global test1    := 13
+       test2332  = 1234
+       test4124 += 124
