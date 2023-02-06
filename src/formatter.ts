@@ -217,7 +217,7 @@ export class Formatter {
             } else if (char === ':' && next === ':') {
                 currTokenType = TokenType.Word;
                 nextSeek = 2;
-            } else if (char === ':' && next !== ':') {
+            } else if (char === ':' && next !== ':' || (char === '?' && next === ':')) {
                 currTokenType = TokenType.Colon;
             } else {
                 currTokenType = TokenType.Word;

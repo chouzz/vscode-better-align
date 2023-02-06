@@ -65,3 +65,9 @@ teastas := 2 // Only some comments
 global test1    := 13
        test2332  = 1234
        test4124 += 124
+
+export interface TA_P{
+    click_type  : string|number,   // a
+    page_type   ?: string,
+    card_type   ?: string,   //c
+}

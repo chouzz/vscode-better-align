@@ -174,4 +174,17 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should format operator like ?:', () => {
+        editor.selection = new vscode.Selection(70, 0, 70, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '    click_type : string|number,   // a',
+            '    page_type ?: string,',
+            '    card_type ?: string,          //c',
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });
