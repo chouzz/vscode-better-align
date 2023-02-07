@@ -187,4 +187,16 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should not break tab indent', () => {
+        editor.selection = new vscode.Selection(75, 0, 75, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            '	$test    = 123;',
+            '	$test123 = 456;'
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });

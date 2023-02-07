@@ -71,3 +71,6 @@ export interface TA_P{
     page_type   ?: string,
     card_type   ?: string,   //c
 }
+
+	$test = 123;
+	$test123 = 456;
