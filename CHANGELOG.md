@@ -1,3 +1,8 @@
+# v1.4.1 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.1)
+
+- Fix tab indentation replaced by space indentation
+- Align command support `?:` operator
+
 # v1.4.0 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.0)
 
 - Fix errors align with empty line
