@@ -467,17 +467,19 @@ export class Formatter {
         */
         let firstNonSpaceCharIndex = 0;
         let min = Infinity;
+        let whiteSpaceType = ' ';
         for (let info of range.infos) {
             firstNonSpaceCharIndex = info.line.text.search(/\S/);
             min = Math.min(min, firstNonSpaceCharIndex);
             if (info.tokens[0].type === TokenType.Whitespace) {
+                whiteSpaceType = info.tokens[0].text[0] ?? ' ';
                 info.tokens.shift();
             }
             if (info.tokens.length > 1 && info.tokens[info.tokens.length - 1].type === TokenType.Whitespace) {
                 info.tokens.pop();
             }
         }
-        indentation = ' '.repeat(min);
+        indentation = whiteSpaceType.repeat(min);
         /* 1. Special treatment for Word-Word-Operator ( e.g. var abc = )
         For example, without:
 
