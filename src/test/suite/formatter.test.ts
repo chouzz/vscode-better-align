@@ -199,4 +199,16 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
     });
+
+    test('Formatter::should get correct result for c like assignment', () => {
+        editor.selection = new vscode.Selection(78, 0, 78, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'int a &= b;',
+            'int c |= d;'
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });

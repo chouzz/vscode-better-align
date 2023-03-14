@@ -207,6 +207,7 @@ export class Formatter {
                     char === '.' ||
                     char === ':' ||
                     char === '!' ||
+                    char === '&' ||
                     char === '=') &&
                 next === '='
             ) {
