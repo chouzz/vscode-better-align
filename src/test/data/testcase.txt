@@ -74,3 +74,6 @@ export interface TA_P{
 
 	$test = 123;
 	$test123 = 456;
+
+int a  &= b;
+int c |= d;
