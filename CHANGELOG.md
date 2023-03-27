@@ -1,3 +1,7 @@
+# v1.4.2 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.2)
+
+- Fix assignment like C style
+
 # v1.4.1 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.1)
 
 - Fix tab indentation replaced by space indentation
