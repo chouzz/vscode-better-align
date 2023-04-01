@@ -138,7 +138,7 @@
     "@typescript-eslint/parser": "^5.45.0",
     "@vscode/test-electron": "^2.2.2",
     "esbuild-loader": "^2.20.0",
-    "eslint": "^8.31.0",
+    "eslint": "^8.37.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
     "ts-loader": "^9.4.1",
