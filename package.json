@@ -22,7 +22,11 @@
     "type": "git",
     "url": "https://github.com/chouzz/vscode-better-align.git"
   },
+  "packageManager": "yarn@4.9.2",
   "engines": {
+    "node": "20",
+    "npm": "please-use-yarn",
+    "yarn": "4.7.0",
     "vscode": "^1.47.0"
   },
   "categories": [
@@ -125,8 +129,13 @@
     "package": "webpack --mode production --devtool hidden-source-map && yarn compile-web",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "yarn compile-tests && yarn compile && yarn lint",
-    "lint": "eslint src --ext ts",
+    "pretest": "yarn-run-all -p compile-tests compile -s lint",
+    "lint": "run-p 'lint:js' 'lint:other'",
+    "lint:js": "prettier --check '**/*.{ts,tsx,js,jsx,cjs}' --ignore-path .gitignore --ignore-path .prettierignore",
+    "lint:other": "prettier --check '**/*.{json,md,yaml,yml}' --ignore-path .gitignore --ignore-path .prettierignore",
+    "fix": "run-p 'fix:**'",
+    "fix:js": "yarn run lint:js --write",
+    "fix:other": "yarn run lint:other --write",
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
@@ -141,6 +150,7 @@
     "eslint": "^8.31.0",
     "glob": "^8.0.3",
     "mocha": "^10.0.0",
+    "npm-run-all": "^4.1.5",
     "ts-loader": "^9.4.1",
     "typescript": "^4.9.4",
     "webpack": "^5.73.0",
@@ -148,6 +158,5 @@
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.7.7"
-  },
-  "packageManager": "yarn@4.9.2"
+  }
 }
