@@ -118,14 +118,14 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "webpack && npm run compile-web",
+    "vscode:prepublish": "yarn package",
+    "compile": "webpack && yarn compile-web",
     "watch": "webpack --watch",
     "compile-web": "webpack --config webpack.web.config.js",
-    "package": "webpack --mode production --devtool hidden-source-map && npm run compile-web",
+    "package": "webpack --mode production --devtool hidden-source-map && yarn compile-web",
     "compile-tests": "tsc -p . --outDir out",
     "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "pretest": "yarn compile-tests && yarn compile && yarn lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js"
   },
@@ -148,5 +148,6 @@
   },
   "dependencies": {
     "@vscode/extension-telemetry": "^0.7.7"
-  }
+  },
+  "packageManager": "yarn@4.9.2"
 }
