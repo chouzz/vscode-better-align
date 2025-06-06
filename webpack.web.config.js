@@ -1,5 +1,5 @@
-const path = require('path');
-const webpack = require('webpack');
+const path = require('path')
+const webpack = require('webpack')
 
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
 /** @type WebpackConfig */
@@ -14,7 +14,7 @@ const webExtensionConfig = {
     filename: '[name].js',
     path: path.join(__dirname, './dist/web'),
     libraryTarget: 'commonjs',
-    devtoolModuleFilenameTemplate: '../../[resource-path]'
+    devtoolModuleFilenameTemplate: '../../[resource-path]',
   },
   resolve: {
     mainFields: ['browser', 'module', 'main'], // look for `browser` entry point in imported node modules
@@ -26,8 +26,8 @@ const webExtensionConfig = {
       // Webpack 5 no longer polyfills Node.js core modules automatically.
       // see https://webpack.js.org/configuration/resolve/#resolvefallback
       // for the list of Node.js core module polyfills.
-      assert: require.resolve('assert')
-    }
+      assert: require.resolve('assert'),
+    },
   },
   module: {
     rules: [
@@ -37,27 +37,29 @@ const webExtensionConfig = {
         loader: 'esbuild-loader',
         options: {
           loader: 'ts',
-          target: 'es2015'
-        }
-      }
-    ]
+          target: 'es2015',
+        },
+      },
+    ],
   },
   plugins: [
     new webpack.ProvidePlugin({
-      process: 'process/browser' // provide a shim for the global `process` variable
-    })
+      process: 'process/browser', // provide a shim for the global `process` variable
+    }),
   ],
   externals: {
     vscode: 'commonjs vscode', // ignored because it doesn't exist
-    'applicationinsights-native-metrics': 'commonjs applicationinsights-native-metrics', // ignored because we don't ship native module
+    'applicationinsights-native-metrics':
+      'commonjs applicationinsights-native-metrics', // ignored because we don't ship native module
     '@opentelemetry/tracing': 'commonjs @opentelemetry/tracing', // ignored because we don't ship this module
     '@opentelemetry/instrumentation': 'commonjs @opentelemetry/instrumentation', // ignored because we don't ship this module
-    '@azure/opentelemetry-instrumentation-azure-sdk': 'commonjs @azure/opentelemetry-instrumentation-azure-sdk', // ignored because we don't ship this module
-    '@azure/functions-core': 'commonjs @azure/functions-core' 
+    '@azure/opentelemetry-instrumentation-azure-sdk':
+      'commonjs @azure/opentelemetry-instrumentation-azure-sdk', // ignored because we don't ship this module
+    '@azure/functions-core': 'commonjs @azure/functions-core',
   },
   performance: {
-    hints: false
+    hints: false,
   },
-  devtool: 'nosources-source-map' // create a source map that points to the original source file
-};
-module.exports = [webExtensionConfig];
+  devtool: 'nosources-source-map', // create a source map that points to the original source file
+}
+module.exports = [webExtensionConfig]
