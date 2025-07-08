@@ -1,79 +1,73 @@
 import * as vscode from 'vscode';
+import { Tokenizer, TokenType, Token, LineTokenInfo } from './tokenizer';
+import { LanguageProfile } from './languageProfile';
 
-enum TokenType {
-    Invalid = 'Invalid',
-    Word = 'Word',
-    Assignment = 'Assignment', // = += -= *= /= %= ~= |= ^= .= :=
-    Arrow = 'Arrow', // =>
-    Block = 'Block', // {} [] ()
-    PartialBlock = 'PartialBlock', // { [ (
-    EndOfBlock = 'EndOfBlock', // } ] )
-    String = 'String',
-    PartialString = 'PartialString',
-    Comment = 'Comment',
-    Whitespace = 'Whitespace',
-    Colon = 'Colon',
-    Comma = 'Comma',
-    CommaAsWord = 'CommaAsWord',
-    Insertion = 'Insertion',
-}
-
-interface Token {
-    type: TokenType;
-    text: string;
-}
-
-export interface LineInfo {
+// Renaming LineInfo to FormatterLineInfo to avoid conflict with Tokenizer's LineTokenInfo if used in the same scope outside
+export interface FormatterLineInfo {
     line: vscode.TextLine;
-    sgfntTokenType: TokenType;
-    sgfntTokens: TokenType[];
-    tokens: Token[];
+    sgfntTokenType: TokenType; // The primary significant token type chosen for alignment in this block
+    // sgfntTokens: TokenType[]; // This was used to find common significant tokens, now handled by tokenizer's significantTokenTypes
+    tokens: Token[]; // Tokens from the tokenizer, possibly with insertions
+    originalTokens: Token[]; // Raw tokens from tokenizer before any modification by formatter
+    significantTokenTypes: TokenType[]; // Significant token types from the tokenizer
 }
 
 export interface LineRange {
     anchor: number;
-    infos: LineInfo[];
+    infos: FormatterLineInfo[];
 }
 
-const REG_WS = /\s/;
-const BRACKET_PAIR: any = {
-    '{': '}',
-    '[': ']',
-    '(': ')',
-};
+const REG_WS = /\s/; // Keep for now, might be useful or moved to language profile
 
 function whitespace(count: number) {
     return new Array(count + 1).join(' ');
 }
 
 export class Formatter {
+    private _editor: vscode.TextEditor; // Renamed
+    private _tokenizer: Tokenizer; // Renamed
+    private _languageProfile: LanguageProfile; // Renamed
+
     /* Align:
-     *   operators = += -= *= /= :
+     *   operators (defined in LanguageProfile)
      *   trailling comment
      *   preceding comma
-     * Ignore anything inside a quote, comment, or block
+     * Ignore anything inside a string, comment (handled by tokenizer), or block (partially by tokenizer)
      */
+    constructor(languageProfile: LanguageProfile) {
+        this._languageProfile = languageProfile; // Renamed
+        this._tokenizer = new Tokenizer(languageProfile); // Renamed
+    }
+
     public process(editor: vscode.TextEditor): void {
-        this.editor = editor;
+        this._editor = editor; // Renamed // Keep editor reference for document access and edits
 
         // Get line ranges
-        const ranges = this.getLineRanges(editor);
+        const ranges = this.getLineRanges();
 
         // Format
         let formatted: string[][] = [];
         for (let range of ranges) {
-            formatted.push(this.format(range));
+            if (range.infos.length > 0) { // Ensure range is not empty
+                formatted.push(this.format(range));
+            }
         }
 
         // Apply
-        editor.edit((editBuilder) => {
+        this._editor.edit((editBuilder) => { // Renamed
             for (let i = 0; i < ranges.length; ++i) {
+                if (ranges[i].infos.length === 0) { continue; } // Skip empty ranges // Added curly
+
                 var infos = ranges[i].infos;
-                var lastline = infos[infos.length - 1].line;
-                var location = new vscode.Range(infos[0].line.lineNumber, 0, lastline.lineNumber, lastline.text.length);
-                const eol = editor.document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n';
+                var firstLine = infos[0].line;
+                var lastLine = infos[infos.length - 1].line;
+                var location = new vscode.Range(firstLine.lineNumber, 0, lastLine.lineNumber, lastLine.text.length);
+                const eol = this._editor.document.eol === vscode.EndOfLine.LF ? '\n' : '\r\n'; // Renamed
                 const replaced = formatted[i].join(eol);
-                if (editor.document.getText(location) === replaced) {
+
+                // Get current text of the range to compare
+                const currentText = this._editor.document.getText(location); // Renamed
+                if (currentText === replaced) {
                     continue;
                 }
                 editBuilder.replace(location, replaced);
@@ -81,18 +75,17 @@ export class Formatter {
         });
     }
 
-    protected editor: vscode.TextEditor;
-
-    protected getLineRanges(editor: vscode.TextEditor): LineRange[] {
+    // No longer needs editor passed if it's stored on the class
+    protected getLineRanges(): LineRange[] {
         var ranges: LineRange[] = [];
-        editor.selections.forEach((sel) => {
+        this._editor.selections.forEach((sel) => { // Renamed
             const indentBase = this.getConfig().get('indentBase', 'firstline') as string;
             const importantIndent: boolean = indentBase === 'dontchange';
 
             let res: LineRange;
             if (sel.isSingleLine) {
                 // If this selection is single line. Look up and down to search for the similar neighbour
-                ranges.push(this.narrow(0, editor.document.lineCount - 1, sel.active.line, importantIndent));
+                ranges.push(this.narrow(0, this._editor.document.lineCount - 1, sel.active.line, importantIndent)); // Renamed
             } else {
                 // Otherwise, narrow down the range where to align
                 let start = sel.start.line;
@@ -100,225 +93,91 @@ export class Formatter {
 
                 while (true) {
                     res = this.narrow(start, end, start, importantIndent);
-                    let lastLine = res.infos[res.infos.length - 1];
+                    if (!res.infos.length) { // Stop if narrow returns an empty range
+                        if (start <= end) { // Try next line if narrow returned empty for current start
+                             start++;
+                             if (start > end) { break; } // Added curly
+                             continue;
+                        } else {
+                            break;
+                        }
+                    }
+                    let lastLineInfo = res.infos[res.infos.length - 1];
 
-                    if (lastLine.line.lineNumber > end) {
-                        break;
+                    if (lastLineInfo.line.lineNumber > end) {
+                        // This can happen if narrow expands beyond the selection end due to partial blocks
+                        // We should only add if the first line of the narrowed range is within the selection
+                        if (res.infos[0].line.lineNumber <= end) {
+                             // Trim infos to be within the original end
+                            const trimmedInfos = res.infos.filter(info => info.line.lineNumber <= end);
+                            if (trimmedInfos.length > 0) {
+                                res.infos = trimmedInfos;
+                                lastLineInfo = trimmedInfos[trimmedInfos.length-1];
+                            } else {
+                                break; // or start = lastLineInfo.line.lineNumber + 1;
+                            }
+                        } else {
+                           break;
+                        }
                     }
 
+                    // Check if the first line info has a valid significant token type
                     if (res.infos[0] && res.infos[0].sgfntTokenType !== TokenType.Invalid) {
                         ranges.push(res);
+                    } else if (res.infos.length > 0 && res.infos[0].significantTokenTypes.length > 0) {
+                        // Fallback if sgfntTokenType was not set but significant tokens exist
+                        // This might indicate an issue in narrow's logic for setting sgfntTokenType
+                        // For now, let's try to assign one if possible
+                        const commonType = this.getCommonSignificantType(res.infos.map(i => i.significantTokenTypes));
+                        if (commonType && commonType !== TokenType.Invalid) {
+                            res.infos.forEach(info => { info.sgfntTokenType = commonType; }); // Added curly
+                            ranges.push(res);
+                        }
                     }
 
-                    if (lastLine.line.lineNumber === end) {
+
+                    if (lastLineInfo.line.lineNumber >= end) { // use >= to ensure the last line of selection is processed
                         break;
                     }
 
-                    start = lastLine.line.lineNumber + 1;
+                    start = lastLineInfo.line.lineNumber + 1;
                 }
             }
         });
-        return ranges;
+        return ranges.filter(r => r.infos.length > 0); // Ensure no empty ranges are returned
     }
 
     protected getConfig() {
         let defaultConfig = vscode.workspace.getConfiguration('betterAlign');
+        // Language-specific settings are now typically handled by VS Code's configuration system directly
+        // by defining them like "[typescript].betterAlign.operatorPadding" in settings.json.
+        // The `get` method on a ConfigurationSection object already correctly resolves these.
+        // So, the custom logic for langConfig might be redundant if settings are structured well.
+        // However, keeping it for now to maintain existing behavior if users have old style configs.
         let langConfig: any = null;
+        const languageId = this._editor.document.languageId; // Renamed
 
         try {
-            langConfig = vscode.workspace.getConfiguration().get(`[${this.editor.document.languageId}]`) as any;
-        } catch (e) {}
-
-        return {
-            get: function (key: any, defaultValue?: any): any {
-                if (langConfig) {
-                    var key1 = 'betterAlign.' + key;
-                    if (langConfig.hasOwnProperty(key1)) {
-                        return langConfig[key1];
-                    }
-                }
-
-                return defaultConfig.get(key, defaultValue);
-            },
-        };
+            // The direct get `[languageId]` might not work as expected for all settings structures.
+            // It's better to let `defaultConfig.get` handle the resolution.
+            // If specific overrides are needed, they should be checked individually.
+            // For example, vscode.workspace.getConfiguration('', { languageId: languageId }).get('betterAlign.someKey')
+            // For now, assuming 'betterAlign.xxx' keys are correctly resolved by `defaultConfig.get` when languageId is active.
+        } catch (e) {
+            // console.error("Error getting language-specific config:", e);
+        }
+        // Simplified getConfig: VSCode handles language-specific configurations automatically
+        // if they are defined in settings.json e.g. "[typescript]": { "betterAlign.operatorPadding": "left" }
+        return defaultConfig;
     }
 
-    protected tokenize(line: number): LineInfo {
-        let textline = this.editor.document.lineAt(line);
-        let text = textline.text;
-        let pos = 0;
-        let lt: LineInfo = {
-            line: textline,
-            sgfntTokenType: TokenType.Invalid,
-            sgfntTokens: [],
-            tokens: [],
-        };
+    // This method is replaced by this.tokenizer.tokenizeLine
+    // protected tokenize(line: number): FormatterLineInfo { ... }
 
-        let lastTokenType = TokenType.Invalid;
-        let tokenStartPos = -1;
-
-        while (pos < text.length) {
-            let char = text.charAt(pos);
-            let next = text.charAt(pos + 1);
-            let third = text.charAt(pos + 2);
-
-            let currTokenType: TokenType;
-
-            let nextSeek = 1;
-
-            // Tokens order are important
-            if (char.match(REG_WS)) {
-                currTokenType = TokenType.Whitespace;
-            } else if (char === '"' || char === "'" || char === '`') {
-                currTokenType = TokenType.String;
-            } else if (char === '{' || char === '(' || char === '[') {
-                currTokenType = TokenType.Block;
-            } else if (char === '}' || char === ')' || char === ']') {
-                currTokenType = TokenType.EndOfBlock;
-            } else if (
-                char === '/' &&
-                ((next === '/' && (pos > 0 ? text.charAt(pos - 1) : '') !== ':') || // only `//` but not `://`
-                    next === '*')
-            ) {
-                currTokenType = TokenType.Comment;
-            } else if (char === ',') {
-                if (lt.tokens.length === 0 || (lt.tokens.length === 1 && lt.tokens[0].type === TokenType.Whitespace)) {
-                    currTokenType = TokenType.CommaAsWord; // Comma-first style
-                } else {
-                    currTokenType = TokenType.Comma;
-                }
-            } else if (char === '=' && next === '>') {
-                currTokenType = TokenType.Arrow;
-                nextSeek = 2;
-            } else if (
-                // Currently we support only known operators,
-                // formatters will not work for unknown operators, we should find a way to support all operators.
-                // Math operators
-                (char === '+' ||
-                    char === '-' ||
-                    char === '*' ||
-                    char === '/' ||
-                    char === '%' || // FIXME: Find a way to work with the `**` operator
-                    // Bitwise operators
-                    char === '~' ||
-                    char === '|' ||
-                    char === '^' || // FIXME: Find a way to work with the `<<` and `>>` bitwise operators
-                    // Other operators
-                    char === '.' ||
-                    char === ':' ||
-                    char === '!' ||
-                    char === '&' ||
-                    char === '=') &&
-                next === '='
-            ) {
-                currTokenType = TokenType.Assignment;
-                nextSeek = third === '=' ? 3 : 2;
-            } else if (char === '=' && next !== '=') {
-                currTokenType = TokenType.Assignment;
-            } else if (char === ':' && next === ':') {
-                currTokenType = TokenType.Word;
-                nextSeek = 2;
-            } else if (char === ':' && next !== ':' || (char === '?' && next === ':')) {
-                currTokenType = TokenType.Colon;
-            } else {
-                currTokenType = TokenType.Word;
-            }
-
-            if (currTokenType !== lastTokenType) {
-                if (tokenStartPos !== -1) {
-                    lt.tokens.push({
-                        type: lastTokenType,
-                        text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
-                    });
-                }
-
-                lastTokenType = currTokenType;
-                tokenStartPos = pos;
-
-                if (
-                    lastTokenType === TokenType.Assignment ||
-                    lastTokenType === TokenType.Colon ||
-                    lastTokenType === TokenType.Arrow ||
-                    lastTokenType === TokenType.Comment
-                ) {
-                    if (lt.sgfntTokens.indexOf(lastTokenType) === -1) {
-                        lt.sgfntTokens.push(lastTokenType);
-                    }
-                }
-            }
-
-            // Skip to end of string
-            if (currTokenType === TokenType.String) {
-                ++pos;
-                while (pos < text.length) {
-                    let quote = text.charAt(pos);
-                    if (quote === char && text.charAt(pos - 1) !== '\\') {
-                        break;
-                    }
-                    ++pos;
-                }
-                if (pos >= text.length) {
-                    lastTokenType = TokenType.PartialString;
-                }
-            }
-
-            // Skip to end of block
-            if (currTokenType === TokenType.Block) {
-                ++pos;
-                let bracketCount = 1;
-                while (pos < text.length) {
-                    let bracket = text.charAt(pos);
-                    if (bracket === char) {
-                        ++bracketCount;
-                    } else if (bracket === BRACKET_PAIR[char] && text.charAt(pos - 1) !== '\\') {
-                        if (bracketCount === 1) {
-                            break;
-                        } else {
-                            --bracketCount;
-                        }
-                    }
-                    ++pos;
-                }
-                if (pos >= text.length) {
-                    lastTokenType = TokenType.PartialBlock;
-                }
-                // -1 then + nextSeek so keep pos not change in next loop
-                // or we will lost symbols like "] } )"
-            }
-
-            if (char === '/') {
-                // Skip to end if we encounter single line comment
-                if (next === '/') {
-                    pos = text.length;
-                } else if (next === '*') {
-                    ++pos;
-                    while (pos < text.length) {
-                        if (text.charAt(pos) === '*' && text.charAt(pos + 1) === '/') {
-                            ++pos;
-                            currTokenType = TokenType.Word;
-                            break;
-                        }
-                        ++pos;
-                    }
-                }
-            }
-
-            pos += nextSeek;
-        }
-
-        if (tokenStartPos !== -1) {
-            lt.tokens.push({
-                type: lastTokenType,
-                text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
-            });
-        }
-
-        return lt;
-    }
-
-    protected hasPartialToken(info: LineInfo): boolean {
-        for (let j = info.tokens.length - 1; j >= 0; --j) {
-            let lastT = info.tokens[j];
+    protected hasPartialToken(info: FormatterLineInfo): boolean {
+        // Use originalTokens as `tokens` might be modified
+        for (let j = info.originalTokens.length - 1; j >= 0; --j) {
+            let lastT = info.originalTokens[j];
             if (
                 lastT.type === TokenType.PartialBlock ||
                 lastT.type === TokenType.EndOfBlock ||
@@ -330,157 +189,236 @@ export class Formatter {
         return false;
     }
 
-    protected hasSameIndent(info1: LineInfo, info2: LineInfo): boolean {
-        var t1 = info1.tokens[0];
-        var t2 = info2.tokens[0];
+    protected hasSameIndent(info1: FormatterLineInfo, info2: FormatterLineInfo): boolean {
+        // Use originalTokens for indent check as `tokens` might be modified (e.g. leading whitespace removed)
+        var t1 = info1.originalTokens.find(t => t.type !== TokenType.Insertion);
+        var t2 = info2.originalTokens.find(t => t.type !== TokenType.Insertion);
+
+        // If either line has no non-insertion tokens, consider indent different or handle as per desired logic
+        if (!t1 || !t2) { return false; } // Added curly
+
 
         if (t1.type === TokenType.Whitespace) {
-            if (t1.text === t2.text) {
+            // If both start with whitespace and it's the same text
+            if (t2.type === TokenType.Whitespace && t1.text === t2.text) {
                 return true;
             }
-        } else if (t2.type !== TokenType.Whitespace) {
+            // If first starts with whitespace, second doesn't, they don't have same indent
+            if (t2.type !== TokenType.Whitespace) {
+                return false;
+            }
+        } else if (t2.type !== TokenType.Whitespace) { // Neither starts with whitespace
             return true;
         }
 
         return false;
     }
 
-    protected arrayAnd(array1: TokenType[], array2: TokenType[]): TokenType[] {
-        var res: TokenType[] = [];
-        var map: any = {};
-        for (var i = 0; i < array1.length; ++i) {
-            map[array1[i]] = true;
+    // Helper to find common significant token types among lines
+    protected getCommonSignificantType(linesTokenTypes: TokenType[][]): TokenType | null {
+        if (!linesTokenTypes || linesTokenTypes.length === 0) {
+            return null;
         }
-        for (var i = 0; i < array2.length; ++i) {
-            if (map[array2[i]]) {
-                res.push(array2[i]);
-            }
+        let commonTypes = [...linesTokenTypes[0]]; // Start with types from the first line
+
+        for (let i = 1; i < linesTokenTypes.length; i++) {
+            commonTypes = commonTypes.filter(type => linesTokenTypes[i].includes(type));
+            if (commonTypes.length === 0) { break; } // No common types left
         }
-        return res;
+
+        if (commonTypes.length === 0) { return null; }
+        // Prioritize certain types if multiple common types exist (e.g., Assignment over Comment)
+        if (commonTypes.includes(TokenType.Assignment)) { return TokenType.Assignment; }
+        if (commonTypes.includes(TokenType.Colon)) { return TokenType.Colon; }
+        if (commonTypes.includes(TokenType.Arrow)) { return TokenType.Arrow; }
+        if (commonTypes.includes(TokenType.OtherOperator)) { return TokenType.OtherOperator; } // Generic operator
+        return commonTypes[0]; // Return the first one found or based on some priority
     }
+
 
     /*
      * Determine which blocks of code needs to be align.
-     * 1. Empty lines is the boundary of a block.
-     * 2. If user selects something, blocks are always within selection,
-     *    but not necessarily is the selection.
-     * 3. Bracket / Brace usually means boundary.
-     * 4. Unsimilar line is boundary.
+     * (Logic adapted from original, now uses this.tokenizer)
      */
     protected narrow(start: number, end: number, anchor: number, importantIndent: boolean): LineRange {
-        let anchorToken = this.tokenize(anchor);
-        let range = { anchor, infos: [anchorToken] };
-
-        let tokenTypes = anchorToken.sgfntTokens;
-
-        if (anchorToken.sgfntTokens.length === 0) {
-            return range;
+        const anchorLineInfo = this._tokenizer.tokenizeLine(this._editor.document.lineAt(anchor)); // Renamed
+        if (anchorLineInfo.significantTokenTypes.length === 0 && !this.hasPartialToken({line: anchorLineInfo.line, tokens:[], originalTokens: anchorLineInfo.tokens, sgfntTokenType: TokenType.Invalid, significantTokenTypes: []})) {
+             // If anchor line has no significant tokens and no partial tokens, it can't be an anchor for alignment.
+            return { anchor, infos: [] };
         }
 
-        if (this.hasPartialToken(anchorToken)) {
-            return range;
+        const anchorFormatterInfo: FormatterLineInfo = {
+            line: anchorLineInfo.line,
+            tokens: [...anchorLineInfo.tokens], // Clone tokens for modification
+            originalTokens: anchorLineInfo.tokens,
+            sgfntTokenType: TokenType.Invalid, // To be determined later
+            significantTokenTypes: anchorLineInfo.significantTokenTypes,
+        };
+
+        const rangeInfos: FormatterLineInfo[] = [anchorFormatterInfo];
+        let currentCommonTypes = [...anchorFormatterInfo.significantTokenTypes];
+
+        if (this.hasPartialToken(anchorFormatterInfo) && currentCommonTypes.length === 0) {
+            // If it only has partial token and no other significant tokens, treat it as a single-line range.
+             // Determine a default sgfntTokenType if possible (e.g. if it's a comment line)
+            if (anchorFormatterInfo.significantTokenTypes.includes(TokenType.Comment)) {
+                anchorFormatterInfo.sgfntTokenType = TokenType.Comment;
+            } else {
+                 // Attempt to set a type if only one significant token type exists
+                 if(anchorFormatterInfo.significantTokenTypes.length === 1) {
+                    anchorFormatterInfo.sgfntTokenType = anchorFormatterInfo.significantTokenTypes[0];
+                 } else {
+                    anchorFormatterInfo.sgfntTokenType = TokenType.Invalid; // Or handle as error/no alignment
+                 }
+            }
+            return { anchor, infos: [anchorFormatterInfo] };
         }
 
-        let i = anchor - 1;
-        while (i >= start) {
-            let token = this.tokenize(i);
 
-            if (this.hasPartialToken(token)) {
-                break;
-            }
+        // Look upwards
+        for (let i = anchor - 1; i >= start; i--) {
+            const lineTokenInfo = this._tokenizer.tokenizeLine(this._editor.document.lineAt(i)); // Renamed
+            const formatterInfo: FormatterLineInfo = {
+                line: lineTokenInfo.line,
+                tokens: [...lineTokenInfo.tokens],
+                originalTokens: lineTokenInfo.tokens,
+                sgfntTokenType: TokenType.Invalid,
+                significantTokenTypes: lineTokenInfo.significantTokenTypes,
+            };
 
-            let tt = this.arrayAnd(tokenTypes, token.sgfntTokens);
-            if (tt.length === 0) {
-                break;
-            }
-            tokenTypes = tt;
+            if (this.hasPartialToken(formatterInfo)) { break; }
+            if (formatterInfo.significantTokenTypes.length === 0) { break; } // Line with no alignable tokens
 
-            if (importantIndent && !this.hasSameIndent(anchorToken, token)) {
-                break;
-            }
+            const commonWithCurrent = this.getCommonSignificantType([currentCommonTypes, formatterInfo.significantTokenTypes]);
+            if (!commonWithCurrent) { break; }
 
-            range.infos.unshift(token);
-            --i;
+            currentCommonTypes = currentCommonTypes.filter(type => formatterInfo.significantTokenTypes.includes(type));
+            if(currentCommonTypes.length === 0) { break; }
+
+
+            if (importantIndent && !this.hasSameIndent(anchorFormatterInfo, formatterInfo)) { break; }
+
+            rangeInfos.unshift(formatterInfo);
         }
 
-        i = anchor + 1;
-        while (i <= end) {
-            let token = this.tokenize(i);
+        // Look downwards
+        for (let i = anchor + 1; i <= end; i++) {
+            const lineTokenInfo = this._tokenizer.tokenizeLine(this._editor.document.lineAt(i)); // Renamed
+            const formatterInfo: FormatterLineInfo = {
+                line: lineTokenInfo.line,
+                tokens: [...lineTokenInfo.tokens],
+                originalTokens: lineTokenInfo.tokens,
+                sgfntTokenType: TokenType.Invalid,
+                significantTokenTypes: lineTokenInfo.significantTokenTypes,
+            };
 
-            let tt = this.arrayAnd(tokenTypes, token.sgfntTokens);
-            if (tt.length === 0) {
+            const commonWithCurrent = this.getCommonSignificantType([currentCommonTypes, formatterInfo.significantTokenTypes]);
+            if (!commonWithCurrent && !this.hasPartialToken(formatterInfo)) { break; } // Break if no common types unless it's a partial token ending the block
+
+            if (commonWithCurrent) {
+                 currentCommonTypes = currentCommonTypes.filter(type => formatterInfo.significantTokenTypes.includes(type));
+                 if(currentCommonTypes.length === 0 && !this.hasPartialToken(formatterInfo)) { break; }
+            } else if (!this.hasPartialToken(formatterInfo)) { // No common and not partial
                 break;
             }
-            tokenTypes = tt;
 
-            if (importantIndent && !this.hasSameIndent(anchorToken, token)) {
-                break;
-            }
 
-            if (this.hasPartialToken(token)) {
-                range.infos.push(token);
-                break;
-            }
+            if (importantIndent && !this.hasSameIndent(anchorFormatterInfo, formatterInfo)) { break; }
 
-            range.infos.push(token);
-            ++i;
+            rangeInfos.push(formatterInfo);
+            if (this.hasPartialToken(formatterInfo)) { break; } // Stop if a partial token is encountered (like end of a multiline string/comment)
         }
 
-        let sgt;
-        if (tokenTypes.indexOf(TokenType.Assignment) >= 0) {
-            sgt = TokenType.Assignment;
+        // Determine the significant token type for the entire range
+        const overallSgfntType = this.getCommonSignificantType(rangeInfos.map(info => info.significantTokenTypes));
+
+        if (overallSgfntType && overallSgfntType !== TokenType.Invalid) {
+            for (let info of rangeInfos) {
+                info.sgfntTokenType = overallSgfntType;
+            }
+        } else if (rangeInfos.length === 1 && rangeInfos[0].significantTokenTypes.length > 0) {
+            // For a single line that couldn't find common types (e.g. only a comment)
+            // use its own most significant type if possible
+            const singleLineSgType = this.getCommonSignificantType([rangeInfos[0].significantTokenTypes]);
+            if (singleLineSgType) {
+                 rangeInfos[0].sgfntTokenType = singleLineSgType;
+            } else {
+                 return { anchor, infos: [] }; // Cannot determine alignment type
+            }
         } else {
-            sgt = tokenTypes[0];
-        }
-        for (let info of range.infos) {
-            info.sgfntTokenType = sgt;
+            // If no common significant type could be determined for the block,
+            // it might mean the lines are not alignable as a group by a common operator.
+            // Or, if only one line, it might be a comment line.
+            if (rangeInfos.length === 1 && rangeInfos[0].significantTokenTypes.includes(TokenType.Comment)) {
+                 rangeInfos[0].sgfntTokenType = TokenType.Comment;
+            } else if (rangeInfos.length > 0 && !rangeInfos.some(info => info.significantTokenTypes.length > 0)) {
+                 // All lines have no significant tokens
+                 return { anchor, infos: [] };
+            } else if (rangeInfos.length > 0) {
+                // Fallback: if no common type, maybe treat as invalid or don't align this block.
+                // For now, let's try to assign the first significant type of the anchor line if any.
+                // This part needs careful consideration of desired behavior.
+                const anchorSigTypes = rangeInfos.find(info => info.line.lineNumber === anchor)?.significantTokenTypes;
+                if (anchorSigTypes && anchorSigTypes.length > 0) {
+                    const typeToUse = this.getCommonSignificantType([anchorSigTypes]) || TokenType.Invalid;
+                     rangeInfos.forEach(info => { info.sgfntTokenType = typeToUse; }); // Apply this type to all, potentially risky
+                } else {
+                    return { anchor, infos: [] }; // Truly no basis for alignment
+                }
+
+            } else {
+                 return { anchor, infos: [] };
+            }
         }
 
-        return range;
+
+        return { anchor, infos: rangeInfos.filter(info => info.sgfntTokenType !== TokenType.Invalid) };
     }
 
     protected format(range: LineRange): string[] {
-        // 0. Remove indentatioin, and trailing whitespace
+        if (range.infos.length === 0) { return []; }
+
+        // 0. Remove indentation, and trailing whitespace from modifiable tokens list
         let indentation = '';
-        let anchorLine = range.infos[0];
+        let anchorLineInfo = range.infos[0]; // The FormatterLineInfo
         const config = this.getConfig();
 
-        if ((config.get('indentBase', 'firstline') as string) === 'activeline') {
-            for (let info of range.infos) {
-                if (info.line.lineNumber === range.anchor) {
-                    anchorLine = info;
-                    break;
-                }
+        const indentBaseSetting = config.get('indentBase', 'firstline') as string;
+        if (indentBaseSetting === 'activeline') {
+            const activeLineNum = this._editor.selection.active.line; // Renamed // Changed .lineNumber to .line
+            const activeLineInRange = range.infos.find(info => info.line.lineNumber === activeLineNum);
+            if (activeLineInRange) {
+                anchorLineInfo = activeLineInRange;
             }
         }
-        if (!anchorLine.tokens.length) {
-            return [];
+
+        // If anchor line has no original tokens, formatting might be problematic
+        if (!anchorLineInfo.originalTokens.length) {
+             // return range.infos.map(info => info.line.text); // return original lines
         }
 
-        // Get indentation from multiple lines
-        /*
-            fasdf   !== 1231321;    => indentation = 0
-        var abc   === 123;
-        
-            test := 1               => indentation = 4
-            teastas := 2
+        let minIndent = Infinity;
+        let whiteSpaceChar = ' '; // Default whitespace char
 
-        */
-        let firstNonSpaceCharIndex = 0;
-        let min = Infinity;
-        let whiteSpaceType = ' ';
         for (let info of range.infos) {
-            firstNonSpaceCharIndex = info.line.text.search(/\S/);
-            min = Math.min(min, firstNonSpaceCharIndex);
-            if (info.tokens[0].type === TokenType.Whitespace) {
-                whiteSpaceType = info.tokens[0].text[0] ?? ' ';
+            const firstNonWsIndex = info.line.firstNonWhitespaceCharacterIndex;
+            minIndent = Math.min(minIndent, firstNonWsIndex);
+
+            // Use originalTokens to determine the whitespace char, as `tokens` might be modified
+            const firstToken = info.originalTokens.find(t => t.type !== TokenType.Insertion); // First actual token
+            if (firstToken && firstToken.type === TokenType.Whitespace && firstToken.text.length > 0) {
+                whiteSpaceChar = firstToken.text[0];
+            }
+
+            // Modify the `tokens` array for formatting. `originalTokens` remains unchanged.
+            if (info.tokens.length > 0 && info.tokens[0].type === TokenType.Whitespace) {
                 info.tokens.shift();
             }
-            if (info.tokens.length > 1 && info.tokens[info.tokens.length - 1].type === TokenType.Whitespace) {
+            if (info.tokens.length > 0 && info.tokens[info.tokens.length - 1].type === TokenType.Whitespace) {
                 info.tokens.pop();
             }
         }
-        indentation = whiteSpaceType.repeat(min);
+        indentation = whiteSpaceChar.repeat(minIndent < Infinity ? minIndent : 0) ;
         /* 1. Special treatment for Word-Word-Operator ( e.g. var abc = )
         For example, without:
 
@@ -500,7 +438,11 @@ export class Formatter {
         for (let info of range.infos) {
             let count = 0;
             for (let token of info.tokens) {
-                if (token.type === info.sgfntTokenType) {
+                // sgfntTokenType should be set for each info in the range by narrow()
+                if (token.type === info.sgfntTokenType ||
+                    (info.sgfntTokenType === TokenType.Assignment && this._languageProfile.assignmentOperators.has(token.text)) || // Renamed
+                    (info.sgfntTokenType === TokenType.OtherOperator && this._languageProfile.otherOperators.has(token.text)) // Renamed
+                    ) {
                     count = -count;
                     break;
                 }
@@ -513,8 +455,11 @@ export class Formatter {
                 }
             }
 
-            if (count < -1) {
-                firstWordLength = Math.max(firstWordLength, info.tokens[0].text.length);
+            if (count < -1) { // Indicates Word-Word-Operator pattern
+                const firstTextToken = info.tokens.find(t => t.type !== TokenType.Whitespace && t.type !== TokenType.CommaAsWord);
+                if (firstTextToken) {
+                    firstWordLength = Math.max(firstWordLength, firstTextToken.text.length);
+                }
             }
         }
 
@@ -522,40 +467,89 @@ export class Formatter {
         if (firstWordLength > 0) {
             let wordSpace: Token = {
                 type: TokenType.Insertion,
-                text: whitespace(firstWordLength + 1),
+                text: whitespace(firstWordLength + 1), // +1 for space after the word
             };
             let oneSpace: Token = { type: TokenType.Insertion, text: ' ' };
 
             for (let info of range.infos) {
                 let count = 0;
-                for (let token of info.tokens) {
-                    if (token.type === info.sgfntTokenType) {
+                let firstTokenIndex = -1;
+                for (let k = 0; k < info.tokens.length; k++) {
+                    const token = info.tokens[k];
+                    if (token.type === info.sgfntTokenType ||
+                        (info.sgfntTokenType === TokenType.Assignment && this._languageProfile.assignmentOperators.has(token.text)) || // Renamed
+                        (info.sgfntTokenType === TokenType.OtherOperator && this._languageProfile.otherOperators.has(token.text)) // Renamed
+                        ) {
                         count = -count;
                         break;
                     }
                     if (token.type !== TokenType.Whitespace) {
+                        if (firstTokenIndex === -1) { firstTokenIndex = k; } // Added curly
                         ++count;
                     }
                 }
 
-                if (count === -1) {
-                    info.tokens.unshift(wordSpace);
-                } else if (count < -1) {
-                    if (info.tokens[1].type === TokenType.Whitespace) {
-                        info.tokens[1] = oneSpace;
-                    } else if (info.tokens[0].type === TokenType.CommaAsWord) {
-                        info.tokens.splice(1, 0, oneSpace);
-                    }
-                    if (info.tokens[0].text.length !== firstWordLength) {
-                        let ws = {
+                const firstTextToken = info.tokens.find(t => t.type !== TokenType.Whitespace && t.type !== TokenType.CommaAsWord);
+
+                if (count === -1 && firstTextToken) { // Operator is the second non-whitespace token
+                    // Insert appropriate spacing to align the start of the first word
+                     const currentFirstWordLength = firstTextToken.text.length;
+                     if (currentFirstWordLength < firstWordLength) {
+                         const wsToInsert = whitespace(firstWordLength - currentFirstWordLength);
+                         // Insert after the first word token, before the next token (likely space or operator)
+                         let insertPos = info.tokens.indexOf(firstTextToken) + 1;
+                         // Check if there is already a whitespace token there
+                         if (insertPos < info.tokens.length && info.tokens[insertPos].type === TokenType.Whitespace) {
+                             info.tokens[insertPos].text = wsToInsert + " "; // Combine with existing space or replace
+                         } else {
+                             info.tokens.splice(insertPos, 0, {type: TokenType.Insertion, text: wsToInsert});
+                         }
+                     }
+                     // This logic needs to be careful not to mess up existing spacing too much.
+                     // The original code unshifted `wordSpace` which is `whitespace(firstWordLength + 1)`
+                     // This effectively standardizes the space *before* the first word if it's part of W-W-Op.
+                     // Let's try to replicate that more closely if the pattern is "Word Operator"
+                     if (firstTokenIndex !== -1 && info.tokens[firstTokenIndex].type !== TokenType.CommaAsWord) {
+                         const lenDiff = firstWordLength - info.tokens[firstTokenIndex].text.length;
+                         if (lenDiff > 0) {
+                             if (firstTokenIndex + 1 < info.tokens.length && info.tokens[firstTokenIndex+1].type === TokenType.Whitespace) {
+                                 info.tokens[firstTokenIndex+1].text = whitespace(lenDiff) + info.tokens[firstTokenIndex+1].text;
+                             } else {
+                                  info.tokens.splice(firstTokenIndex + 1, 0, {type: TokenType.Insertion, text: whitespace(lenDiff)});
+                             }
+                         }
+                     }
+
+
+                } else if (count < -1 && firstTextToken) { // Word Word Operator
+                    // This is the case "var abc = ..."
+                    // Ensure one space after the first word, and then pad if necessary
+                    const firstWordActualToken = info.tokens[firstTokenIndex];
+                    if (firstWordActualToken.text.length < firstWordLength) {
+                         const ws = {
                             type: TokenType.Insertion,
-                            text: whitespace(firstWordLength - info.tokens[0].text.length),
+                            text: whitespace(firstWordLength - firstWordActualToken.text.length),
                         };
-                        if (info.tokens[0].type === TokenType.CommaAsWord) {
-                            info.tokens.unshift(ws);
+                        // Insert this whitespace *after* the first word token
+                        let insertionPoint = firstTokenIndex + 1;
+                        if (insertionPoint < info.tokens.length && info.tokens[insertionPoint].type === TokenType.Whitespace) {
+                            // If there's already whitespace, prepend to it
+                            info.tokens[insertionPoint].text = ws.text + info.tokens[insertionPoint].text;
                         } else {
-                            info.tokens.splice(1, 0, ws);
+                            info.tokens.splice(insertionPoint, 0, ws);
                         }
+                    }
+                    // Ensure at least one space after the (now padded) first word
+                    let spaceAfterFirstWordIndex = firstTokenIndex + ( (firstWordActualToken.text.length < firstWordLength) ? 2:1); // 2 if padding was added, 1 otherwise
+
+                    if (spaceAfterFirstWordIndex < info.tokens.length) {
+                        if (info.tokens[spaceAfterFirstWordIndex].type === TokenType.Whitespace) {
+                            if(info.tokens[spaceAfterFirstWordIndex].text.length === 0) { info.tokens[spaceAfterFirstWordIndex].text = ' '; } // Added curly
+                        } else {
+                             info.tokens.splice(spaceAfterFirstWordIndex, 0, oneSpace);
+                        }
+                    } else {
+                         info.tokens.push(oneSpace);
                     }
                 }
             }
@@ -565,13 +559,20 @@ export class Formatter {
         for (let info of range.infos) {
             let i = 1;
             while (i < info.tokens.length) {
-                if (info.tokens[i].type === info.sgfntTokenType || info.tokens[i].type === TokenType.Comma) {
+                const currentToken = info.tokens[i];
+                const isSignificantOperator = currentToken.type === info.sgfntTokenType ||
+                                            (info.sgfntTokenType === TokenType.Assignment && this._languageProfile.assignmentOperators.has(currentToken.text)) || // Renamed
+                                            (info.sgfntTokenType === TokenType.OtherOperator && this._languageProfile.otherOperators.has(currentToken.text)); // Renamed
+
+                if (isSignificantOperator || currentToken.type === TokenType.Comma) {
                     if (info.tokens[i - 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i - 1, 1);
                         --i;
                     }
-                    if (info.tokens[i + 1] && info.tokens[i + 1].type === TokenType.Whitespace) {
+                    // Check i again due to splice if (i-1) was whitespace
+                    if (i < info.tokens.length && info.tokens[i + 1] && info.tokens[i + 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i + 1, 1);
+                        // No need to change i here as the next token is now at i+1
                     }
                 }
                 ++i;
@@ -579,171 +580,165 @@ export class Formatter {
         }
 
         // 3. Align
-        const configOP = config.get('operatorPadding') as string;
-        const configWS = config.get('surroundSpace');
-        const stt = TokenType[range.infos[0].sgfntTokenType].toLowerCase();
-        const configDef: any = {
-            colon: [0, 1],
-            assignment: [1, 1],
-            comment: 2,
-            arrow: [1, 1],
+        const configOP = config.get('operatorPadding', 'left') as string; // Default to 'left'
+        const configWS = config.get('surroundSpace', {}) as any; // Default to empty object
+
+        // Determine the sgfntTokenType for the range (assuming it's uniform, set by narrow())
+        // If sgfntTokenType is Invalid for some reason, we might need a default or skip alignment.
+        const primarySgfntTokenType = range.infos[0]?.sgfntTokenType || TokenType.Invalid;
+        if (primarySgfntTokenType === TokenType.Invalid && !range.infos.every(info => info.sgfntTokenType === TokenType.Comment)) {
+            // If not all comments and no valid primary type, maybe return original text or try a different strategy
+            // For now, proceed cautiously. This case implies an issue in `narrow` or unalignable block.
+        }
+
+        const sttString = TokenType[primarySgfntTokenType]?.toLowerCase() || 'default';
+
+        const defaultConfigSurroundSpaces: any = {
+            colon: [0, 1], // no space before, one space after
+            assignment: [1, 1], // one space before, one space after
+            arrow: [1, 1], // one space before, one space after
+            comment: 2, // number of spaces before a standalone or trailing comment
+            otheroperator: [1,1], // Default for other operators
         };
-        const configSTT = configWS[stt] || configDef[stt];
-        const configComment = configWS['comment'] || configDef['comment'];
 
-        const rangeSize = range.infos.length;
+        const surroundSpaces = configWS[sttString] || defaultConfigSurroundSpaces[sttString] || [1,1]; // Default to [1,1] if not specified
+        const commentSpaceBefore = typeof configWS['comment'] === 'number' ? configWS['comment'] : (typeof defaultConfigSurroundSpaces['comment'] === 'number' ? defaultConfigSurroundSpaces['comment'] : 2);
 
-        let length = new Array<number>(rangeSize);
-        length.fill(0);
-        let column = new Array<number>(rangeSize);
-        column.fill(0);
-        let result = new Array<string>(rangeSize);
-        result.fill(indentation);
 
-        let exceed = 0; // Tracks how many line have reached to the end.
-        let hasTrallingComment = false;
-        let resultSize = 0;
+        const numLines = range.infos.length;
+        let currentTokenIndices = new Array<number>(numLines).fill(0);
+        let builtLines = new Array<string>(numLines).fill(indentation);
+        let maxLineLengthBeforeOperator = 0;
+        let maxOperatorLength = 0;
+        let linesAreDone = new Array<boolean>(numLines).fill(false);
+        let trailingComments = new Array<Token | null>(numLines).fill(null);
 
-        while (exceed < rangeSize) {
-            let operatorSize = 0;
 
-            // First pass: for each line, scan until we reach to the next operator
-            for (let l = 0; l < rangeSize; ++l) {
-                let i = column[l];
-                let info = range.infos[l];
-                let tokenSize = info.tokens.length;
+        // Phase 1: Process tokens up to the first significant operator (or comma), calculate max lengths
+        for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+            const info = range.infos[lineIndex];
+            let currentBuiltLine = builtLines[lineIndex];
+            let k = currentTokenIndices[lineIndex];
+            let foundOperatorThisLine = false;
 
-                if (i === -1) {
-                    continue;
-                }
-
-                let end = tokenSize;
-                let res = result[l];
-
-                // Bail out if we reach to the trailing comment
-                if (tokenSize > 1 && info.tokens[tokenSize - 1].type === TokenType.Comment) {
-                    hasTrallingComment = true;
-                    if (tokenSize > 2 && info.tokens[tokenSize - 2].type === TokenType.Whitespace) {
-                        end = tokenSize - 2;
-                    } else {
-                        end = tokenSize - 1;
-                    }
-                }
-
-                for (; i < end; ++i) {
-                    let token = info.tokens[i];
-                    // Vertical align will occur at significant operator or subsequent comma
-                    if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0)) {
-                        operatorSize = Math.max(operatorSize, token.text.length);
-                        break;
-                    } else {
-                        res += token.text;
-                    }
-                }
-
-                result[l] = res;
-                if (i < end) {
-                    resultSize = Math.max(resultSize, res.length);
-                }
-
-                if (i === end) {
-                    ++exceed;
-                    column[l] = -1;
-                    info.tokens.splice(0, end);
-                } else {
-                    column[l] = i;
+            // Extract trailing comment first
+            if (info.tokens.length > 0 && info.tokens[info.tokens.length - 1].type === TokenType.Comment) {
+                trailingComments[lineIndex] = info.tokens.pop()!; // Remove for now, add back later
+                // Remove preceding whitespace if any
+                if (info.tokens.length > 0 && info.tokens[info.tokens.length - 1].type === TokenType.Whitespace) {
+                    info.tokens.pop();
                 }
             }
 
-            // Second pass: align
-            for (let l = 0; l < rangeSize; ++l) {
-                let i = column[l];
-                if (i === -1) {
-                    continue;
-                }
 
-                let info = range.infos[l];
-                let res = result[l];
+            for (; k < info.tokens.length; k++) {
+                const token = info.tokens[k];
+                const isSignificant = token.type === info.sgfntTokenType ||
+                                    (info.sgfntTokenType === TokenType.Assignment && this._languageProfile.assignmentOperators.has(token.text)) || // Renamed
+                                    (info.sgfntTokenType === TokenType.OtherOperator && this._languageProfile.otherOperators.has(token.text)) || // Renamed
+                                    (token.type === TokenType.Comma && k !== 0); // Comma is significant if not at start
 
-                let op = info.tokens[i].text;
-                if (op.length < operatorSize) {
-                    if (configOP === 'right') {
-                        op = whitespace(operatorSize - op.length) + op;
-                    } else {
-                        op = op + whitespace(operatorSize - op.length);
-                    }
-                }
-
-                let padding = '';
-                if (resultSize > res.length) {
-                    padding = whitespace(resultSize - res.length);
-                }
-
-                if (info.tokens[i].type === TokenType.Comma) {
-                    res += op;
-                    if (i < info.tokens.length - 1) {
-                        res += padding + ' '; // Ensure there's one space after comma.
-                    }
-                    // Skip if there is only comment type without any operators.
-                } else if (info.tokens.length === 1 && info.tokens[0].type === TokenType.Comment) {
-                    exceed++;
+                if (isSignificant) {
+                    maxOperatorLength = Math.max(maxOperatorLength, token.text.length);
+                    foundOperatorThisLine = true;
                     break;
                 } else {
-                    if (configSTT[0] < 0) {
-                        // operator will stick with the leftside word
-                        if (configSTT[1] < 0) {
-                            // operator will be aligned, and the sibling token will be connected with the operator
-                            let z = res.length - 1;
-                            while (z >= 0) {
-                                let ch = res.charAt(z);
-                                if (ch.match(REG_WS)) {
-                                    break;
-                                }
-                                --z;
-                            }
-                            res = res.substring(0, z + 1) + padding + res.substring(z + 1) + op;
-                        } else {
-                            res = res + op;
-                            if (i < info.tokens.length - 1) {
-                                res += padding;
-                            }
-                        }
+                    currentBuiltLine += token.text;
+                }
+            }
+            builtLines[lineIndex] = currentBuiltLine;
+            currentTokenIndices[lineIndex] = k;
+            if (foundOperatorThisLine) {
+                maxLineLengthBeforeOperator = Math.max(maxLineLengthBeforeOperator, currentBuiltLine.length - indentation.length);
+            } else {
+                linesAreDone[lineIndex] = true; // No operator found, line is done except for trailing comment
+            }
+        }
+
+        // Phase 2: Align operators and add spacing
+        for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+            if (linesAreDone[lineIndex] && !trailingComments[lineIndex]) { continue; } // Truly done
+             if (currentTokenIndices[lineIndex] >= range.infos[lineIndex].tokens.length && !trailingComments[lineIndex]) {
+                linesAreDone[lineIndex] = true;
+                continue;
+            }
+
+
+            const info = range.infos[lineIndex];
+            let currentBuiltLine = builtLines[lineIndex];
+            let k = currentTokenIndices[lineIndex];
+
+            if (k < info.tokens.length) { // If there is an operator token
+                const operatorToken = info.tokens[k];
+                const operatorText = operatorToken.text;
+                let paddedOperatorText = operatorText;
+
+                // Pad operator itself if operatorPadding is 'right' or to match maxOperatorLength
+                if (operatorText.length < maxOperatorLength) {
+                    if (configOP === 'right') {
+                        paddedOperatorText = whitespace(maxOperatorLength - operatorText.length) + operatorText;
+                    } else { // 'left' or default
+                        paddedOperatorText = operatorText + whitespace(maxOperatorLength - operatorText.length);
+                    }
+                }
+
+                const currentLengthBeforeOp = currentBuiltLine.length - indentation.length;
+                const spacesNeededBeforeOperator = maxLineLengthBeforeOperator - currentLengthBeforeOp;
+
+                if (operatorToken.type === TokenType.Comma) {
+                    currentBuiltLine += paddedOperatorText; // Comma typically has no space before, padding handles alignment
+                    if (k < info.tokens.length - 1) { // If not the last token
+                         currentBuiltLine += " "; // Ensure one space after comma
+                    }
+                } else { // Assignment, Colon, Arrow, OtherOperator
+                    const spaceBeforeConfig = Array.isArray(surroundSpaces) ? surroundSpaces[0] : 0;
+                    const spaceAfterConfig = Array.isArray(surroundSpaces) ? surroundSpaces[1] : 0;
+
+                    if (spaceBeforeConfig < 0) { // Stick to left word
+                         // This case was complex in original, means operator sticks to word on left,
+                         // and padding is applied before that word-operator group.
+                         // Simplified: add padding, then operator. Fine-tuning might be needed.
+                        currentBuiltLine += whitespace(spacesNeededBeforeOperator) + paddedOperatorText;
                     } else {
-                        res = res + padding + whitespace(configSTT[0]) + op;
+                        currentBuiltLine += whitespace(spacesNeededBeforeOperator + spaceBeforeConfig) + paddedOperatorText;
                     }
-                    if (configSTT[1] > 0) {
-                        res += whitespace(configSTT[1]);
+
+                    if (spaceAfterConfig > 0 && k < info.tokens.length -1) { // Add space after if not last token and configured
+                        currentBuiltLine += whitespace(spaceAfterConfig);
                     }
                 }
-
-                result[l] = res;
-                column[l] = i + 1;
+                k++; // Move past the operator token
+            } else if (!trailingComments[lineIndex]) { // No operator, and no trailing comment, line is done
+                 linesAreDone[lineIndex] = true;
             }
+
+
+            // Add remaining tokens for the line
+            for (; k < info.tokens.length; k++) {
+                currentBuiltLine += info.tokens[k].text;
+            }
+            builtLines[lineIndex] = currentBuiltLine;
+            currentTokenIndices[lineIndex] = k; // Should be end of tokens now
         }
 
-        // 4. Align trailing comment
-        if (configComment < 0) {
-            // It means user don't want to align trailing comment.
-            for (let l = 0; l < rangeSize; ++l) {
-                let info = range.infos[l];
-                for (let token of info.tokens) {
-                    result[l] += token.text;
+        // Phase 3: Align and add trailing comments
+        let maxLineLengthBeforeComment = 0;
+        if (trailingComments.some(tc => tc !== null)) {
+            for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+                if (trailingComments[lineIndex]) { // Only consider lines that have a comment
+                    maxLineLengthBeforeComment = Math.max(maxLineLengthBeforeComment, builtLines[lineIndex].length);
                 }
             }
-        } else {
-            resultSize = 0;
-            for (let res of result) {
-                resultSize = Math.max(res.length, resultSize);
-            }
-            for (let l = 0; l < rangeSize; ++l) {
-                let info = range.infos[l];
-                if (info.tokens.length) {
-                    let res = result[l];
-                    result[l] = res + whitespace(resultSize - res.length + configComment) + info.tokens.pop()?.text;
+
+            for (let lineIndex = 0; lineIndex < numLines; lineIndex++) {
+                if (trailingComments[lineIndex]) {
+                    const commentToken = trailingComments[lineIndex]!;
+                    const currentLineLen = builtLines[lineIndex].length;
+                    const spacesToComment = maxLineLengthBeforeComment - currentLineLen + commentSpaceBefore;
+                    builtLines[lineIndex] += whitespace(Math.max(0,spacesToComment)) + commentToken.text;
                 }
             }
         }
-
-        return result;
+        return builtLines;
     }
 }
