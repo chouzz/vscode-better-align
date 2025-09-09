@@ -1,0 +1,28 @@
+---
+alwaysApply: false
+---
+## TypeScript Conventions for this repo
+
+- **Target**: match `@types/vscode` `^1.47.0` API, Node `18.x` types
+- **Imports**: prefer direct VS Code API imports `import * as vscode from 'vscode'`
+- **Types**:
+  - Explicit function return types for exported APIs
+  - Avoid `any`; model narrow types where practical
+- **Control flow**:
+  - Prefer early returns, shallow nesting
+  - Handle errors meaningfully; avoid empty `catch`
+- **Formatting**:
+  - Follow existing style; keep lines readable, wrap long expressions
+  - Use multi-line constructs instead of dense one-liners
+- **Naming**:
+  - Functions: verbs; variables: descriptive nouns
+  - Avoid abbreviations and 1–2 letter symbols
+- **Comments**:
+  - Explain intent, not mechanics; keep concise
+- **Build**:
+  - Do not import from `out/` or `dist/` in source
+  - Public surface in `src/extension.ts`; keep web-specific code under `dist/web`
+- **Tests**:
+  - Place under `src/test/suite/`; avoid coupling to build artifacts
+- **Telemetry**:
+  - Use utilities in [src/telemetry.ts](mdc:src/telemetry.ts); respect user privacy and VS Code guidelines
