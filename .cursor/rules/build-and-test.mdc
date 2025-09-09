@@ -1,0 +1,22 @@
+---
+description: Build and test guidance for the VS Code extension
+alwaysApply: false
+---
+## Build and Test Guidance
+
+- **Install**: `npm ci`
+- **Build**:
+  - Dev: `npm run compile` (bundles `src` to `dist`, then web build)
+  - Watch: `npm run watch`
+  - Package: `npm run package` (production + hidden source maps)
+- **Lint**: `npm run lint` (eslint on `src` `*.ts`)
+- **Tests**:
+  - Compile tests: `npm run compile-tests`
+  - Run: `npm test` (executes [out/test/runTest.js](mdc:out/test/runTest.js))
+  - Test suites: [src/test/suite/](mdc:src/test/suite/)
+- **Debugging**:
+  - Use VS Code Extension Host to run and debug `Align` command `vscode-better-align.align`
+- **Do not edit generated files**: [dist/](mdc:dist/) and [out/](mdc:out/) are build outputs
+- **Web extension**:
+  - Browser entry: [dist/web/extension.js](mdc:dist/web/extension.js)
+  - Build via `npm run compile-web`

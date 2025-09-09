@@ -1,0 +1,25 @@
+---
+alwaysApply: false
+---
+## VS Code Extension Project Structure
+
+- **Entry points**:
+  - `main`: [dist/extension.js](mdc:dist/extension.js) built from [src/extension.ts](mdc:src/extension.ts)
+  - `browser`: [dist/web/extension.js](mdc:dist/web/extension.js)
+- **Core modules**:
+  - Formatter logic: [src/formatter.ts](mdc:src/formatter.ts)
+  - Telemetry: [src/telemetry.ts](mdc:src/telemetry.ts)
+- **Build output**: [dist/](mdc:dist/) and [out/](mdc:out/)
+- **Commands**: `vscode-better-align.align` registered in `package.json`
+- **Activation**: `onStartupFinished` and on command
+- **Configuration**: `betterAlign.*` contributed in [package.json](mdc:package.json)
+- **Scripts** (from `package.json`):
+  - `compile`: webpack bundles + web build
+  - `watch`: webpack watch
+  - `package`: prod bundle + hidden source maps
+  - `lint`: eslint on `src` `*.ts`
+  - `test`: VS Code tests via [out/test/runTest.js](mdc:out/test/runTest.js)
+
+Notes
+- Source TypeScript lives in [src/](mdc:src/); do not edit built files under [dist/](mdc:dist/) or [out/](mdc:out/).
+- Images and marketplace metadata in [images/](mdc:images/) and [README.md](mdc:README.md).
