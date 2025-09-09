@@ -23,6 +23,16 @@ interface Token {
     text: string;
 }
 
+interface BlockComment {
+    start: string;
+    end: string;
+}
+
+interface LanguageSyntaxConfig {
+    lineComments: string[];
+    blockComments: BlockComment[];
+}
+
 export interface LineInfo {
     line: vscode.TextLine;
     sgfntTokenType: TokenType;
@@ -40,6 +50,57 @@ const BRACKET_PAIR: any = {
     '{': '}',
     '[': ']',
     '(': ')',
+};
+
+// Default language syntax configurations
+const DEFAULT_LANGUAGE_CONFIGS: { [languageId: string]: LanguageSyntaxConfig } = {
+    javascript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    typescript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    java: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    c: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    cpp: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    csharp: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    python: { lineComments: ['#'], blockComments: [] },
+    ruby: { lineComments: ['#'], blockComments: [] },
+    perl: { lineComments: ['#'], blockComments: [] },
+    shellscript: { lineComments: ['#'], blockComments: [] },
+    bash: { lineComments: ['#'], blockComments: [] },
+    zsh: { lineComments: ['#'], blockComments: [] },
+    fish: { lineComments: ['#'], blockComments: [] },
+    powershell: { lineComments: ['#'], blockComments: [] },
+    yaml: { lineComments: ['#'], blockComments: [] },
+    dockerfile: { lineComments: ['#'], blockComments: [] },
+    makefile: { lineComments: ['#'], blockComments: [] },
+    ini: { lineComments: ['#', ';'], blockComments: [] },
+    toml: { lineComments: ['#'], blockComments: [] },
+    sql: { lineComments: ['--'], blockComments: [{ start: '/*', end: '*/' }] },
+    lua: { lineComments: ['--'], blockComments: [{ start: '--[[', end: ']]' }] },
+    haskell: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
+    elm: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
+    rust: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    go: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    swift: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    kotlin: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    scala: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    php: { lineComments: ['//', '#'], blockComments: [{ start: '/*', end: '*/' }] },
+    html: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
+    xml: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
+    css: { lineComments: [], blockComments: [{ start: '/*', end: '*/' }] },
+    scss: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    less: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    vim: { lineComments: ['"'], blockComments: [] },
+    lisp: { lineComments: [';'], blockComments: [] },
+    scheme: { lineComments: [';'], blockComments: [] },
+    clojure: { lineComments: [';'], blockComments: [] },
+    matlab: { lineComments: ['%'], blockComments: [{ start: '%{', end: '%}' }] },
+    r: { lineComments: ['#'], blockComments: [] },
+    julia: { lineComments: ['#'], blockComments: [{ start: '#=', end: '=#' }] },
+};
+
+// Fallback configuration for unknown languages
+const FALLBACK_CONFIG: LanguageSyntaxConfig = {
+    lineComments: ['//'],
+    blockComments: [{ start: '/*', end: '*/' }]
 };
 
 function whitespace(count: number) {
@@ -143,6 +204,25 @@ export class Formatter {
         };
     }
 
+    protected getLanguageConfig(): LanguageSyntaxConfig {
+        const languageId = this.editor.document.languageId;
+        const config = this.getConfig();
+        const userLanguageConfigs = config.get('languageConfigs', {}) as { [key: string]: LanguageSyntaxConfig };
+        
+        // User override takes priority
+        if (userLanguageConfigs[languageId]) {
+            return userLanguageConfigs[languageId];
+        }
+        
+        // Use default config for known languages
+        if (DEFAULT_LANGUAGE_CONFIGS[languageId]) {
+            return DEFAULT_LANGUAGE_CONFIGS[languageId];
+        }
+        
+        // Fallback for unknown languages
+        return FALLBACK_CONFIG;
+    }
+
     protected tokenize(line: number): LineInfo {
         let textline = this.editor.document.lineAt(line);
         let text = textline.text;
@@ -175,11 +255,7 @@ export class Formatter {
                 currTokenType = TokenType.Block;
             } else if (char === '}' || char === ')' || char === ']') {
                 currTokenType = TokenType.EndOfBlock;
-            } else if (
-                char === '/' &&
-                ((next === '/' && (pos > 0 ? text.charAt(pos - 1) : '') !== ':') || // only `//` but not `://`
-                    next === '*')
-            ) {
+            } else if (this.isCommentStart(text, pos)) {
                 currTokenType = TokenType.Comment;
             } else if (char === ',') {
                 if (lt.tokens.length === 0 || (lt.tokens.length === 1 && lt.tokens[0].type === TokenType.Whitespace)) {
@@ -286,21 +362,17 @@ export class Formatter {
                 // or we will lost symbols like "] } )"
             }
 
-            if (char === '/') {
-                // Skip to end if we encounter single line comment
-                if (next === '/') {
-                    pos = text.length;
-                } else if (next === '*') {
-                    ++pos;
-                    while (pos < text.length) {
-                        if (text.charAt(pos) === '*' && text.charAt(pos + 1) === '/') {
-                            ++pos;
-                            currTokenType = TokenType.Word;
-                            break;
-                        }
-                        ++pos;
-                    }
+            // Handle comment consumption
+            if (currTokenType === TokenType.Comment) {
+                const commentResult = this.consumeComment(text, pos);
+                pos = commentResult.endPos;
+                if (commentResult.isPartial) {
+                    lastTokenType = TokenType.Comment;
+                } else if (commentResult.isBlock && commentResult.endPos < text.length) {
+                    // Block comment ended, continue tokenizing
+                    currTokenType = TokenType.Word;
                 }
+                continue;
             }
 
             pos += nextSeek;
@@ -314,6 +386,69 @@ export class Formatter {
         }
 
         return lt;
+    }
+
+    protected isCommentStart(text: string, pos: number): boolean {
+        const langConfig = this.getLanguageConfig();
+        
+        // Check line comments (sorted by length descending for longest match first)
+        const sortedLineComments = [...langConfig.lineComments].sort((a, b) => b.length - a.length);
+        for (const comment of sortedLineComments) {
+            if (text.substring(pos, pos + comment.length) === comment) {
+                // Special case: don't treat '//' in '://' as comment (preserve existing behavior)
+                if (comment === '//' && pos > 0 && text.charAt(pos - 1) === ':') {
+                    continue;
+                }
+                return true;
+            }
+        }
+        
+        // Check block comments (sorted by length descending for longest match first)
+        const sortedBlockComments = [...langConfig.blockComments].sort((a, b) => b.start.length - a.start.length);
+        for (const comment of sortedBlockComments) {
+            if (text.substring(pos, pos + comment.start.length) === comment.start) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    protected consumeComment(text: string, pos: number): { endPos: number; isPartial: boolean; isBlock: boolean } {
+        const langConfig = this.getLanguageConfig();
+        
+        // Check line comments first (sorted by length descending)
+        const sortedLineComments = [...langConfig.lineComments].sort((a, b) => b.length - a.length);
+        for (const comment of sortedLineComments) {
+            if (text.substring(pos, pos + comment.length) === comment) {
+                // Special case: don't treat '//' in '://' as comment
+                if (comment === '//' && pos > 0 && text.charAt(pos - 1) === ':') {
+                    continue;
+                }
+                // Line comment: consume to end of line
+                return { endPos: text.length, isPartial: false, isBlock: false };
+            }
+        }
+        
+        // Check block comments (sorted by length descending)
+        const sortedBlockComments = [...langConfig.blockComments].sort((a, b) => b.start.length - a.start.length);
+        for (const comment of sortedBlockComments) {
+            if (text.substring(pos, pos + comment.start.length) === comment.start) {
+                // Block comment: find the end
+                let searchPos = pos + comment.start.length;
+                while (searchPos < text.length) {
+                    if (text.substring(searchPos, searchPos + comment.end.length) === comment.end) {
+                        return { endPos: searchPos + comment.end.length - 1, isPartial: false, isBlock: true };
+                    }
+                    searchPos++;
+                }
+                // Didn't find end - partial block comment
+                return { endPos: text.length, isPartial: true, isBlock: true };
+            }
+        }
+        
+        // Shouldn't reach here if isCommentStart was called first
+        return { endPos: pos, isPartial: false, isBlock: false };
     }
 
     protected hasPartialToken(info: LineInfo): boolean {

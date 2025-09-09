@@ -8,7 +8,7 @@ class FakeFormatter extends Formatter {
     }
 
     public getLineRanges(editor: vscode.TextEditor) {
-        super.editor = editor;
+        (this as any).editor = editor;
         return super.getLineRanges(editor);
     }
 }
@@ -210,5 +210,43 @@ suite('Formatter Test Suite', () => {
             'int c |= d;'
         ];
         assert.deepEqual(actual, expect);
+    });
+
+    test('Formatter::should get language config for different languages', () => {
+        // Test that the formatter can get appropriate language configs
+        const formatter = new FakeFormatter();
+        
+        // Create a mock editor with JavaScript language
+        const jsEditor = {
+            document: { languageId: 'javascript' },
+            selections: [new vscode.Selection(0, 0, 0, 0)]
+        } as any;
+        formatter['editor'] = jsEditor;
+        
+        const jsConfig = formatter['getLanguageConfig']();
+        assert.ok(jsConfig.lineComments.includes('//'), 'JavaScript should support // comments');
+        assert.ok(jsConfig.blockComments.some(c => c.start === '/*' && c.end === '*/'), 'JavaScript should support /* */ comments');
+        
+        // Test Python config
+        const pyEditor = {
+            document: { languageId: 'python' },
+            selections: [new vscode.Selection(0, 0, 0, 0)]
+        } as any;
+        formatter['editor'] = pyEditor;
+        
+        const pyConfig = formatter['getLanguageConfig']();
+        assert.ok(pyConfig.lineComments.includes('#'), 'Python should support # comments');
+        assert.strictEqual(pyConfig.blockComments.length, 0, 'Python should not have block comments by default');
+        
+        // Test SQL config
+        const sqlEditor = {
+            document: { languageId: 'sql' },
+            selections: [new vscode.Selection(0, 0, 0, 0)]
+        } as any;
+        formatter['editor'] = sqlEditor;
+        
+        const sqlConfig = formatter['getLanguageConfig']();
+        assert.ok(sqlConfig.lineComments.includes('--'), 'SQL should support -- comments');
+        assert.ok(sqlConfig.blockComments.some(c => c.start === '/*' && c.end === '*/'), 'SQL should support /* */ comments');
     });
 });
