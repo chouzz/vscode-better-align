@@ -87,6 +87,39 @@
           "type": "boolean",
           "default": false,
           "description": "Auto align current text near the cursor after type enter in editor"
+        },
+        "betterAlign.languageConfigs": {
+          "type": "object",
+          "default": {},
+          "description": "Language-specific comment syntax configuration. Each key is a VS Code language ID, and the value defines comment styles.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "lineComments": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Array of line comment prefixes (e.g., ['#', '//'])"
+              },
+              "blockComments": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "start": {
+                      "type": "string"
+                    },
+                    "end": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["start", "end"]
+                },
+                "description": "Array of block comment definitions (e.g., [{'start': '/*', 'end': '*/'}])"
+              }
+            }
+          }
         }
       }
     },
