@@ -18,13 +18,13 @@ jobs:
         os:
           - ubuntu-latest
         node:
-          - 16
+          - 18
     outputs:
       vsixPath: ${{ steps.packageExtension.outputs.vsixPath }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Use Node.js ${{ matrix.node}}
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node }}
 
@@ -47,7 +47,7 @@ jobs:
           pat: stub
           dryRun: true
       - name: Upload Extension Package as Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.packageExtension.outputs.vsixPath }}
           path: ${{ steps.packageExtension.outputs.vsixPath }}
@@ -60,15 +60,15 @@ jobs:
     timeout-minutes: 10
     steps:
       - name: Checkout Source
-        uses: actions/checkout@v2
-      - name: Install Node v16
-        uses: actions/setup-node@v1
+        uses: actions/checkout@v4
+      - name: Install Node v18
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: 18
       - name: Install Dependencies
         run: npm install
       - name: Download Build Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.build.outputs.vsixPath }}
       - name: Publish to Visual Studio Marketplace
