@@ -25,11 +25,11 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            '  // Only some comments',
-            '  // Only some comments',
-            '  // Only some comments',
-            '  // Only some comments',
-            '  // Only some comments',
+            '      // Only some comments',
+            '      // Only some comments',
+            '      // Only some comments',
+            '      // Only some comments',
+            '      // Only some comments',
         ];
         assert.deepEqual(actual, expect);
     });
