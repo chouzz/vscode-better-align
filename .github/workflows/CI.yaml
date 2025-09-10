@@ -67,18 +67,15 @@ jobs:
           node-version: 18
       - name: Install Dependencies
         run: npm install
-      - name: Download Build Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.build.outputs.vsixPath }}
-      - name: Publish to Visual Studio Marketplace
-        uses: HaaLeo/publish-vscode-extension@v1
-        with:
-          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          extensionFile: ${{ needs.build.outputs.vsixPath }}
-          registryUrl: https://marketplace.visualstudio.com
       - name: Publish to Open VSX Registry
-        uses: HaaLeo/publish-vscode-extension@v1
+        uses: HaaLeo/publish-vscode-extension@v2
+        id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
           extensionFile: ${{ needs.build.outputs.vsixPath }}
