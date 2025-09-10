@@ -1,3 +1,9 @@
+# v1.4.3 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.3)
+
+- CI: Update publishing workflow to use `HaaLeo/publish-vscode-extension@v2`, chain VSIX from Open VSX output, and remove redundant artifact download in release job
+- Add language-aware comment support for multi-language alignment
+
+
 # v1.4.2 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.2)
 
 - Fix assignment like C style
