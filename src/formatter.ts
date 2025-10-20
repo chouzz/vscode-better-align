@@ -16,6 +16,8 @@ enum TokenType {
     Comma = 'Comma',
     CommaAsWord = 'CommaAsWord',
     Insertion = 'Insertion',
+    Spaceship = 'Spaceship', // <=>
+    PHPShortEcho = 'PHPShortEcho', // <?=
 }
 
 interface Token {
@@ -54,47 +56,47 @@ const BRACKET_PAIR: any = {
 
 // Default language syntax configurations
 const DEFAULT_LANGUAGE_CONFIGS: { [languageId: string]: LanguageSyntaxConfig } = {
-    javascript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    typescript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    java: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    bash: { lineComments: ['#'], blockComments: [] },
     c: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    clojure: { lineComments: [';'], blockComments: [] },
     cpp: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
     csharp: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    python: { lineComments: ['#'], blockComments: [] },
-    ruby: { lineComments: ['#'], blockComments: [] },
-    perl: { lineComments: ['#'], blockComments: [] },
-    shellscript: { lineComments: ['#'], blockComments: [] },
-    bash: { lineComments: ['#'], blockComments: [] },
-    zsh: { lineComments: ['#'], blockComments: [] },
-    fish: { lineComments: ['#'], blockComments: [] },
-    powershell: { lineComments: ['#'], blockComments: [] },
-    yaml: { lineComments: ['#'], blockComments: [] },
-    dockerfile: { lineComments: ['#'], blockComments: [] },
-    makefile: { lineComments: ['#'], blockComments: [] },
-    ini: { lineComments: ['#', ';'], blockComments: [] },
-    toml: { lineComments: ['#'], blockComments: [] },
-    sql: { lineComments: ['--'], blockComments: [{ start: '/*', end: '*/' }] },
-    lua: { lineComments: ['--'], blockComments: [{ start: '--[[', end: ']]' }] },
-    haskell: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
-    elm: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
-    rust: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    go: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    swift: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    kotlin: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    scala: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    php: { lineComments: ['//', '#'], blockComments: [{ start: '/*', end: '*/' }] },
-    html: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
-    xml: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
     css: { lineComments: [], blockComments: [{ start: '/*', end: '*/' }] },
-    scss: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    less: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
-    vim: { lineComments: ['"'], blockComments: [] },
-    lisp: { lineComments: [';'], blockComments: [] },
-    scheme: { lineComments: [';'], blockComments: [] },
-    clojure: { lineComments: [';'], blockComments: [] },
-    matlab: { lineComments: ['%'], blockComments: [{ start: '%{', end: '%}' }] },
-    r: { lineComments: ['#'], blockComments: [] },
+    dockerfile: { lineComments: ['#'], blockComments: [] },
+    elm: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
+    fish: { lineComments: ['#'], blockComments: [] },
+    go: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    haskell: { lineComments: ['--'], blockComments: [{ start: '{-', end: '-}' }] },
+    html: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
+    ini: { lineComments: ['#', ';'], blockComments: [] },
+    java: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    javascript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
     julia: { lineComments: ['#'], blockComments: [{ start: '#=', end: '=#' }] },
+    kotlin: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    less: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    lisp: { lineComments: [';'], blockComments: [] },
+    lua: { lineComments: ['--'], blockComments: [{ start: '--[[', end: ']]' }] },
+    makefile: { lineComments: ['#'], blockComments: [] },
+    matlab: { lineComments: ['%'], blockComments: [{ start: '%{', end: '%}' }] },
+    perl: { lineComments: ['#'], blockComments: [] },
+    php: { lineComments: ['//', '#'], blockComments: [{ start: '/*', end: '*/' }] },
+    powershell: { lineComments: ['#'], blockComments: [] },
+    python: { lineComments: ['#'], blockComments: [] },
+    r: { lineComments: ['#'], blockComments: [] },
+    ruby: { lineComments: ['#'], blockComments: [] },
+    rust: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    scala: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    scheme: { lineComments: [';'], blockComments: [] },
+    scss: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    shellscript: { lineComments: ['#'], blockComments: [] },
+    sql: { lineComments: ['--'], blockComments: [{ start: '/*', end: '*/' }] },
+    swift: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    toml: { lineComments: ['#'], blockComments: [] },
+    typescript: { lineComments: ['//'], blockComments: [{ start: '/*', end: '*/' }] },
+    vim: { lineComments: ['"'], blockComments: [] },
+    xml: { lineComments: [], blockComments: [{ start: '<!--', end: '-->' }] },
+    yaml: { lineComments: ['#'], blockComments: [] },
+    zsh: { lineComments: ['#'], blockComments: [] },
 };
 
 // Fallback configuration for unknown languages
@@ -208,17 +210,17 @@ export class Formatter {
         const languageId = this.editor.document.languageId;
         const config = this.getConfig();
         const userLanguageConfigs = config.get('languageConfigs', {}) as { [key: string]: LanguageSyntaxConfig };
-        
+
         // User override takes priority
         if (userLanguageConfigs[languageId]) {
             return userLanguageConfigs[languageId];
         }
-        
+
         // Use default config for known languages
         if (DEFAULT_LANGUAGE_CONFIGS[languageId]) {
             return DEFAULT_LANGUAGE_CONFIGS[languageId];
         }
-        
+
         // Fallback for unknown languages
         return FALLBACK_CONFIG;
     }
@@ -263,6 +265,12 @@ export class Formatter {
                 } else {
                     currTokenType = TokenType.Comma;
                 }
+            } else if (char === '<' && next === '=' && third === '>') {
+                currTokenType = TokenType.Spaceship;
+                nextSeek = 3;
+            } else if (char === '<' && next === '?' && third === '=') {
+                currTokenType = TokenType.PHPShortEcho;
+                nextSeek = 3;
             } else if (char === '=' && next === '>') {
                 currTokenType = TokenType.Arrow;
                 nextSeek = 2;
@@ -304,7 +312,7 @@ export class Formatter {
                 if (tokenStartPos !== -1) {
                     lt.tokens.push({
                         type: lastTokenType,
-                        text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
+                        text: textline.text.substring(tokenStartPos, pos),
                     });
                 }
 
@@ -317,7 +325,7 @@ export class Formatter {
                     lastTokenType === TokenType.Arrow ||
                     lastTokenType === TokenType.Comment
                 ) {
-                    if (lt.sgfntTokens.indexOf(lastTokenType) === -1) {
+                    if (!lt.sgfntTokens.includes(lastTokenType)) {
                         lt.sgfntTokens.push(lastTokenType);
                     }
                 }
@@ -381,7 +389,7 @@ export class Formatter {
         if (tokenStartPos !== -1) {
             lt.tokens.push({
                 type: lastTokenType,
-                text: textline.text.substr(tokenStartPos, pos - tokenStartPos),
+                text: textline.text.substring(tokenStartPos, pos),
             });
         }
 
@@ -390,7 +398,7 @@ export class Formatter {
 
     protected isCommentStart(text: string, pos: number): boolean {
         const langConfig = this.getLanguageConfig();
-        
+
         // Check line comments (sorted by length descending for longest match first)
         const sortedLineComments = [...langConfig.lineComments].sort((a, b) => b.length - a.length);
         for (const comment of sortedLineComments) {
@@ -402,7 +410,7 @@ export class Formatter {
                 return true;
             }
         }
-        
+
         // Check block comments (sorted by length descending for longest match first)
         const sortedBlockComments = [...langConfig.blockComments].sort((a, b) => b.start.length - a.start.length);
         for (const comment of sortedBlockComments) {
@@ -410,13 +418,13 @@ export class Formatter {
                 return true;
             }
         }
-        
+
         return false;
     }
 
     protected consumeComment(text: string, pos: number): { endPos: number; isPartial: boolean; isBlock: boolean } {
         const langConfig = this.getLanguageConfig();
-        
+
         // Check line comments first (sorted by length descending)
         const sortedLineComments = [...langConfig.lineComments].sort((a, b) => b.length - a.length);
         for (const comment of sortedLineComments) {
@@ -429,7 +437,7 @@ export class Formatter {
                 return { endPos: text.length, isPartial: false, isBlock: false };
             }
         }
-        
+
         // Check block comments (sorted by length descending)
         const sortedBlockComments = [...langConfig.blockComments].sort((a, b) => b.start.length - a.start.length);
         for (const comment of sortedBlockComments) {
@@ -446,7 +454,7 @@ export class Formatter {
                 return { endPos: text.length, isPartial: true, isBlock: true };
             }
         }
-        
+
         // Shouldn't reach here if isCommentStart was called first
         return { endPos: pos, isPartial: false, isBlock: false };
     }
@@ -596,7 +604,7 @@ export class Formatter {
         /*
             fasdf   !== 1231321;    => indentation = 0
         var abc   === 123;
-        
+
             test := 1               => indentation = 4
             teastas := 2
 
