@@ -1,3 +1,7 @@
+# v1.4.4 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.4)
+
+- Fix error in PHP
+
 # v1.4.3 [#](https://github.com/chouzz/vscode-better-align/releases/tag/v1.4.3)
 
 - CI: Update publishing workflow to use `HaaLeo/publish-vscode-extension@v2`, chain VSIX from Open VSX output, and remove redundant artifact download in release job
