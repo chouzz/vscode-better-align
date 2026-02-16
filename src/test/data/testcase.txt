@@ -77,3 +77,7 @@ export interface TA_P{
 
 int a &= b;
 int c |= d;
+
+import { canAddMessage, getMessage, getXMessage } from '../utils/API_Msg';
+import { getImg } from '../utils/API_Art';
+import { getProfileStore } from '../utils/Profile';

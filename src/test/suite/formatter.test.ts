@@ -249,4 +249,19 @@ suite('Formatter Test Suite', () => {
         assert.ok(sqlConfig.lineComments.includes('--'), 'SQL should support -- comments');
         assert.ok(sqlConfig.blockComments.some(c => c.start === '/*' && c.end === '*/'), 'SQL should support /* */ comments');
     });
+
+    test('Formatter::should format import from keyword', async () => {
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'typescript');
+        editor.selection = new vscode.Selection(81, 0, 81, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            "import { canAddMessage, getMessage, getXMessage } from '../utils/API_Msg';",
+            "import { getImg }                                 from '../utils/API_Art';",
+            "import { getProfileStore }                        from '../utils/Profile';",
+        ];
+        assert.deepEqual(actual, expect);
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
+    });
 });
