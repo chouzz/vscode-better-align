@@ -69,7 +69,11 @@
               1,
               1
             ],
-            "comment": 2
+            "comment": 2,
+            "from": [
+              1,
+              1
+            ]
           },
           "description": "Specify how many spaces to insert around the operator."
         },

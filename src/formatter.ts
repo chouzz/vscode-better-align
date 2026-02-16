@@ -18,6 +18,7 @@ enum TokenType {
     Insertion = 'Insertion',
     Spaceship = 'Spaceship', // <=>
     PHPShortEcho = 'PHPShortEcho', // <?=
+    From = 'From', // from (import keyword)
 }
 
 interface Token {
@@ -393,6 +394,19 @@ export class Formatter {
             });
         }
 
+        // Post-process: detect `from` keyword and reclassify as From token (JS/TS only)
+        const langId = this.editor.document.languageId;
+        if (langId === 'javascript' || langId === 'javascriptreact' || langId === 'typescript' || langId === 'typescriptreact') {
+            for (let token of lt.tokens) {
+                if (token.type === TokenType.Word && token.text === 'from') {
+                    token.type = TokenType.From;
+                    if (!lt.sgfntTokens.includes(TokenType.From)) {
+                        lt.sgfntTokens.push(TokenType.From);
+                    }
+                }
+            }
+        }
+
         return lt;
     }
 
@@ -730,6 +744,7 @@ export class Formatter {
             assignment: [1, 1],
             comment: 2,
             arrow: [1, 1],
+            from: [1, 1],
         };
         const configSTT = configWS[stt] || configDef[stt];
         const configComment = configWS['comment'] || configDef['comment'];
