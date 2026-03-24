@@ -1,109 +1,139 @@
 # Better Align for Visual Studio Code
 
 [![The MIT License](https://badgen.net/github/license/cerner/terra-framework)](https://badgen.net/github/license/cerner/terra-framework)
-[![GitHub](https://flat.badgen.net/github/release/chouzz/vscode-better-align)](https://github.com/chouzz/vscode-better-align/releases)
-[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/i/chouzz.vscode-better-align
-](https://marketplace.visualstudio.com/items?itemName=Chouzz.vscode-better-align)
-[![Github Actions](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml)
+[![GitHub Release](https://flat.badgen.net/github/release/chouzz/vscode-better-align)](https://github.com/chouzz/vscode-better-align/releases)
+[![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/chouzz.vscode-better-align)](https://marketplace.visualstudio.com/items?itemName=Chouzz.vscode-better-align)
+[![GitHub Actions Workflow](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml/badge.svg)](https://github.com/chouzz/vscode-better-align/actions/workflows/CI.yaml)
 
-Better vertical alignment with/without selection in any language for any characters or words.
+> **Better vertical alignment with or without selection in any language, for any characters or words.**
 
-## Features
+---
 
-- Allow align code in any language
-- Smart align with or without selection
-- Auto align after you type enter
+## ✨ Features
 
-## Usage
+- 🌐 **Multi-language Support** - Align code in any programming language
+- 🎯 **Smart Alignment** - Align with or without text selection
+- ⚡ **Auto Align** - Automatically align after typing `Enter`
 
-Place your cursor at where you want your code to be aligned, and use shortcut `alt + A` or invoke the `Align` command via Command Palette.
+---
 
-## Screenshots
+## 🚀 Usage
 
-![auto-align-characters.gif](https://github.com/chouzz/vscode-better-align/blob/main/images/auto-align-characters.gif)
+Place your cursor at the position where you want alignment, then:
 
-## Extension Configuration
+- Press **`Alt + A`** (Windows/Linux) or **`Option + A`** (Mac)
+- Or invoke the **`Align`** command via Command Palette (`Ctrl+Shift+P` / `Cmd+Shift+P`)
+
+---
+
+## 📸 Demo
+
+![Auto-align Characters](https://github.com/chouzz/vscode-better-align/blob/main/images/auto-align-characters.gif)
+
+---
+
+## ⚙️ Configuration
 
 ### `betterAlign.surroundSpace`
 
-Default value:
+Control the spacing around alignment characters.
 
-```json
-betterAlign.surroundSpace : {
-  "colon"      : [0, 1], // The first number specify how much space to add to the left, can be negative.
-                         // The second number is how much space to the right, can be negative.
-  "assignment" : [1, 1], // The same as above.
-  "arrow"      : [1, 1], // The same as above.
-  "comment"    : 2       // Special how much space to add between the trailing comment and the code.
-                         // If this value is negative, it means don't align the trailing comment.
+**Default Configuration:**
+
+```jsonc
+"betterAlign.surroundSpace": {
+  "colon":      [0, 1],  // [left space, right space]
+  "assignment": [1, 1],  // [left space, right space]
+  "arrow":      [1, 1],  // [left space, right space]
+  "comment":    2        // Space between code and trailing comment
 }
 ```
 
+**Configuration Options:**
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `colon` | `[number, number]` | Spacing around `:` (e.g., in objects/maps) |
+| `assignment` | `[number, number]` | Spacing around `=` |
+| `arrow` | `[number, number]` | Spacing around `=>` or `->` |
+| `comment` | `number` | Space before trailing comments (negative = no alignment) |
+
+---
+
+### Examples
+
+#### Object Properties Alignment
+
+**Original Code:**
 ```javascript
-// Orignal code
 var abc = {
   hello:      1
   ,my :2//comment
   ,friend:   3      // comment
 }
+```
 
-// "colon": [0, 1]
-// "comment": 2
+**With `"colon": [0, 1]` and `"comment": 2`:**
+```javascript
 var abc = {
     hello : 1
   , my    : 2  // comment
   , friend: 3  // comment
 }
+```
 
-// "colon": [1, 2]
-// "comment": 4
+**With `"colon": [1, 2]` and `"comment": 4`:**
+```javascript
 var abc = {
     hello  :  1
   , my     :  2    // comment
   , friend :  3    // comment
 }
+```
 
-// "colon": [-1, 3]
-// "comment": 2
+**With `"colon": [-1, 3]` and `"comment": 2`:**
+```javascript
 var abc = {
     hello:    1
   , my:       2  // comment
   , friend:   3  // comment
 }
+```
 
-// "colon": [-1, -1]
-// "comment": 2
-var abc = {
-     hello:1
-  ,     my:2  //comment
-  , friend:3  // comment
-}
+#### Arrow Function Alignment
 
-
-// Orignal code
+**Original Code:**
+```php
 $data = array(
     'text' => 'something',
     'here is another' => 'sample'
 );
+```
 
-// "arrow": [1, 3]
+**With `"arrow": [1, 3]`:**
+```php
 $data = array(
     'text'            =>   'something',
     'here is another' =>   'sample'
 );
-
 ```
 
-## Issues/Contribution
+---
 
-If you've found a bug, please file at <https://github.com/chouzz/vscode-better-align/issues>.
+## 🐛 Issues & Contribution
 
-If you'd like to help out, fork the [repo](https://github.com/chouzz/vscode-better-align) and submit pull requests.
+- **Found a bug?** [Open an issue](https://github.com/chouzz/vscode-better-align/issues)
+- **Want to contribute?** [Fork the repo](https://github.com/chouzz/vscode-better-align) and submit a pull request
 
-## License
+---
 
-This work is licensed under [Apache License 2.0](https://opensource.org/licenses/Apache-2.0)
+## 📄 License
 
-## Credit
+This work is licensed under the [Apache License 2.0](https://opensource.org/licenses/Apache-2.0).
 
-The codebase is based on [this repository](https://github.com/WarWithinMe/better-align). Thanks @WarWithinMe.
+---
+
+## 🙏 Credits
+
+The codebase is based on [better-align](https://github.com/WarWithinMe/better-align).
+Special thanks to [@WarWithinMe](https://github.com/WarWithinMe).
