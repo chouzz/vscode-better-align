@@ -407,6 +407,15 @@ export class Formatter {
             }
         }
 
+        // Post-process: reclassify Comma as Word in Python to avoid alignment on multiple assignments
+        if (langId === 'python') {
+            for (let token of lt.tokens) {
+                if (token.type === TokenType.Comma) {
+                    token.type = TokenType.Word;
+                }
+            }
+        }
+
         return lt;
     }
 

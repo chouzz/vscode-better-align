@@ -264,4 +264,35 @@ suite('Formatter Test Suite', () => {
         assert.deepEqual(actual, expect);
         await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
     });
+
+    test('Formatter::should format Python multiple assignment correctly', async () => {
+        const pyEditor = {
+            document: {
+                languageId: 'python',
+                lineAt: (line: number) => ({
+                    text: [
+                        'a, b = 1, 2',
+                        'abc, de = 3, 4'
+                    ][line]
+                }),
+                eol: vscode.EndOfLine.LF,
+                getText: (range: any) => {
+                    return 'a, b = 1, 2\\nabc, de = 3, 4';
+                }
+            },
+            selections: [{ active: { line: 0 }, isSingleLine: false, start: { line: 0 }, end: { line: 1 } }],
+            edit: () => {}
+        } as any;
+
+        const formatter = new FakeFormatter();
+        (formatter as any).editor = pyEditor;
+
+        const ranges = (formatter as any).getLineRanges(pyEditor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'a, b    = 1, 2',
+            'abc, de = 3, 4'
+        ];
+        assert.deepEqual(actual, expect);
+    });
 });
