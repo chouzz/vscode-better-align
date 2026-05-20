@@ -409,9 +409,12 @@ export class Formatter {
 
         // Post-process: reclassify Comma as Word in Python to avoid alignment on multiple assignments
         if (langId === 'python') {
-            for (let token of lt.tokens) {
-                if (token.type === TokenType.Comma) {
-                    token.type = TokenType.Word;
+            const hasAssignment = lt.tokens.some((token) => token.type === TokenType.Assignment);
+            if (hasAssignment) {
+                for (let token of lt.tokens) {
+                    if (token.type === TokenType.Comma) {
+                        token.type = TokenType.Word;
+                    }
                 }
             }
         }
