@@ -40,8 +40,8 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            'var abc     = 123;', 
-            'var fsdafsf = 32423,', 
+            'var abc     = 123;',
+            'var fsdafsf = 32423,',
             '    fasdf   = 1231321;'
         ];
         assert.deepEqual(actual, expect);
@@ -78,8 +78,8 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            'var abc     == 123;', 
-            'var fsdafsf == 32423,', 
+            'var abc     == 123;',
+            'var fsdafsf == 32423,',
             '    fasdf   != 1231321;'
         ];
         assert.deepEqual(actual, expect);
@@ -91,8 +91,8 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            'var abc     === 123;', 
-            'var fsdafsf === 32423,', 
+            'var abc     === 123;',
+            'var fsdafsf === 32423,',
             '    fasdf   !== 1231321;'
         ];
         assert.deepEqual(actual, expect);
@@ -104,8 +104,8 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            `           $x === 'nott test'`, 
-            '        || $x === 0', 
+            `           $x === 'nott test'`,
+            '        || $x === 0',
             `        || $x !== 'test'`
         ];
         assert.deepEqual(actual, expect);
@@ -129,9 +129,9 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            '$item["venue_id"]    = $venue->id;',
-            '$item["account_id"]  = $venue->parent_id;',
-            '$item["expire_date"] = Carbon::now()->{$carbon_function}();',
+            '$item[\"venue_id\"]    = $venue->id;',
+            '$item[\"account_id\"]  = $venue->parent_id;',
+            '$item[\"expire_date\"] = Carbon::now()->{$carbon_function}();',
             '$acc_license_data[]  = $item;',
         ];
         assert.deepEqual(actual, expect);
@@ -194,8 +194,8 @@ suite('Formatter Test Suite', () => {
         const ranges = formatter.getLineRanges(editor);
         const actual = formatter.format(ranges[0]);
         const expect = [
-            '	$test    = 123;',
-            '	$test123 = 456;'
+            '\t$test    = 123;',
+            '\t$test123 = 456;'
         ];
         assert.deepEqual(actual, expect);
     });
@@ -215,36 +215,36 @@ suite('Formatter Test Suite', () => {
     test('Formatter::should get language config for different languages', () => {
         // Test that the formatter can get appropriate language configs
         const formatter = new FakeFormatter();
-        
+
         // Create a mock editor with JavaScript language
         const jsEditor = {
             document: { languageId: 'javascript' },
             selections: [new vscode.Selection(0, 0, 0, 0)]
         } as any;
         formatter['editor'] = jsEditor;
-        
+
         const jsConfig = formatter['getLanguageConfig']();
         assert.ok(jsConfig.lineComments.includes('//'), 'JavaScript should support // comments');
         assert.ok(jsConfig.blockComments.some(c => c.start === '/*' && c.end === '*/'), 'JavaScript should support /* */ comments');
-        
+
         // Test Python config
         const pyEditor = {
             document: { languageId: 'python' },
             selections: [new vscode.Selection(0, 0, 0, 0)]
         } as any;
         formatter['editor'] = pyEditor;
-        
+
         const pyConfig = formatter['getLanguageConfig']();
         assert.ok(pyConfig.lineComments.includes('#'), 'Python should support # comments');
         assert.strictEqual(pyConfig.blockComments.length, 0, 'Python should not have block comments by default');
-        
+
         // Test SQL config
         const sqlEditor = {
             document: { languageId: 'sql' },
             selections: [new vscode.Selection(0, 0, 0, 0)]
         } as any;
         formatter['editor'] = sqlEditor;
-        
+
         const sqlConfig = formatter['getLanguageConfig']();
         assert.ok(sqlConfig.lineComments.includes('--'), 'SQL should support -- comments');
         assert.ok(sqlConfig.blockComments.some(c => c.start === '/*' && c.end === '*/'), 'SQL should support /* */ comments');
@@ -263,5 +263,26 @@ suite('Formatter Test Suite', () => {
         ];
         assert.deepEqual(actual, expect);
         await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
+    });
+
+    test('Formatter::should format Python multiple assignment (issue #102)', async () => {
+        const pyEditor = {
+            document: {
+                languageId: 'python',
+                lineAt: (n: number) => editor.document.lineAt(n),
+                eol: editor.document.eol,
+                getText: (r: vscode.Range) => editor.document.getText(r)
+            },
+            selections: [new vscode.Selection(84, 0, 84, 0)]
+        } as any;
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(pyEditor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            "report           = func1('rname')",
+            "year, month, day = format(date, 'abcd')",
+            "filepath         = report.get_filepath(year, month, date)",
+        ];
+        assert.deepEqual(actual, expect);
     });
 });

@@ -722,7 +722,7 @@ export class Formatter {
         for (let info of range.infos) {
             let i = 1;
             while (i < info.tokens.length) {
-                if (info.tokens[i].type === info.sgfntTokenType || info.tokens[i].type === TokenType.Comma) {
+                if (info.tokens[i].type === info.sgfntTokenType || (info.tokens[i].type === TokenType.Comma && this.editor.document.languageId !== 'python')) {
                     if (info.tokens[i - 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i - 1, 1);
                         --i;
@@ -791,7 +791,7 @@ export class Formatter {
                 for (; i < end; ++i) {
                     let token = info.tokens[i];
                     // Vertical align will occur at significant operator or subsequent comma
-                    if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0)) {
+                    if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0 && this.editor.document.languageId !== 'python')) {
                         operatorSize = Math.max(operatorSize, token.text.length);
                         break;
                     } else {

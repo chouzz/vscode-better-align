@@ -80,4 +80,4 @@ int c |= d;
 
 import { canAddMessage, getMessage, getXMessage } from '../utils/API_Msg';
 import { getImg } from '../utils/API_Art';
-import { getProfileStore } from '../utils/Profile';
+import { getProfileStore } from '../utils/Profile';\n\nreport = func1('rname')\nyear, month, day = format(date, 'abcd')\nfilepath = report.get_filepath(year, month, date)
