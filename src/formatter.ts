@@ -719,10 +719,19 @@ export class Formatter {
         }
 
         // 2. Remove whitespace surrounding operator ( comma in the middle of the line is also consider an operator ).
+        const languageId = this.editor.document.languageId;
         for (let info of range.infos) {
             let i = 1;
+            let assignmentCount = 0;
             while (i < info.tokens.length) {
                 if (info.tokens[i].type === info.sgfntTokenType || info.tokens[i].type === TokenType.Comma) {
+                    if (info.sgfntTokenType === TokenType.Assignment && info.tokens[i].type === TokenType.Assignment) {
+                        assignmentCount++;
+                        if (languageId === 'python' && assignmentCount > 1) {
+                            i++;
+                            continue;
+                        }
+                    }
                     if (info.tokens[i - 1].type === TokenType.Whitespace) {
                         info.tokens.splice(i - 1, 1);
                         --i;
@@ -792,8 +801,8 @@ export class Formatter {
                     let token = info.tokens[i];
                     // Vertical align will occur at significant operator or subsequent comma
                     if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0)) {
-                        // If we are aligning assignment, only align the first one for each line
-                        if (info.sgfntTokenType === TokenType.Assignment && token.type === TokenType.Assignment && result[l] !== indentation) {
+                        // If we are aligning assignment, only align the first one for each line in Python
+                        if (languageId === 'python' && info.sgfntTokenType === TokenType.Assignment && token.type === TokenType.Assignment && result[l] !== indentation) {
                             res += token.text;
                             continue;
                         }

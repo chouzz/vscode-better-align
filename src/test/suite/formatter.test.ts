@@ -148,6 +148,17 @@ suite('Formatter Test Suite', () => {
             'b = c = 2'
         ];
         assert.deepEqual(actual, expect);
+
+        // Test with more spaces
+        editor.selection = new vscode.Selection(86, 0, 86, 0);
+        const ranges2 = formatter.getLineRanges(editor);
+        const actual2 = formatter.format(ranges2[0]);
+        const expect2 = [
+            'x   = 1',
+            'yyy = z = 2'
+        ];
+        assert.deepEqual(actual2, expect2);
+
         await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
     });
 
@@ -274,6 +285,55 @@ suite('Formatter Test Suite', () => {
             "import { canAddMessage, getMessage, getXMessage } from '../utils/API_Msg';",
             "import { getImg }                                 from '../utils/API_Art';",
             "import { getProfileStore }                        from '../utils/Profile';",
+        ];
+        assert.deepEqual(actual, expect);
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
+    });
+
+    test('Formatter::should format Python with commas correctly (#102)', async () => {
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'python');
+        const formatter = new FakeFormatter();
+
+        // Mocking tokenize because we can't easily add more lines to testcase.txt and have it loaded
+        const info1: any = {
+            tokens: [
+                { type: 'Word', text: 'a' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Assignment', text: '=' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Word', text: '1' },
+                { type: 'Comma', text: ',' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Word', text: '2' }
+            ],
+            sgfntTokenType: 'Assignment'
+        };
+        const info2: any = {
+            tokens: [
+                { type: 'Word', text: 'bbb' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Assignment', text: '=' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Word', text: '3' },
+                { type: 'Comma', text: ',' },
+                { type: 'Whitespace', text: ' ' },
+                { type: 'Word', text: '4' }
+            ],
+            sgfntTokenType: 'Assignment'
+        };
+
+        const range: any = {
+            anchor: 0,
+            infos: [info1, info2]
+        };
+
+        // We need to set editor languageId
+        formatter['editor'] = { document: { languageId: 'python' } } as any;
+
+        const actual = formatter.format(range);
+        const expect = [
+            'a   = 1, 2',
+            'bbb = 3, 4'
         ];
         assert.deepEqual(actual, expect);
         await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');

@@ -84,3 +84,6 @@ import { getProfileStore } from '../utils/Profile';
 
 a = 1
 b = c = 2
+
+x = 1
+yyy = z = 2
