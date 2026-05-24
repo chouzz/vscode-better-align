@@ -137,6 +137,20 @@ suite('Formatter Test Suite', () => {
         assert.deepEqual(actual, expect);
     });
 
+    test('Formatter::should format Python multiple assignment correctly (#102)', async () => {
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'python');
+        editor.selection = new vscode.Selection(84, 0, 84, 0);
+        const formatter = new FakeFormatter();
+        const ranges = formatter.getLineRanges(editor);
+        const actual = formatter.format(ranges[0]);
+        const expect = [
+            'a = 1',
+            'b = c = 2'
+        ];
+        assert.deepEqual(actual, expect);
+        await vscode.languages.setTextDocumentLanguage(editor.document, 'plaintext');
+    });
+
     test('Formatter::should format comment with words', () => {
         editor.selection = new vscode.Selection(57, 0, 57, 0);
         const formatter = new FakeFormatter();

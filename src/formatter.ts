@@ -792,6 +792,11 @@ export class Formatter {
                     let token = info.tokens[i];
                     // Vertical align will occur at significant operator or subsequent comma
                     if (token.type === info.sgfntTokenType || (token.type === TokenType.Comma && i !== 0)) {
+                        // If we are aligning assignment, only align the first one for each line
+                        if (info.sgfntTokenType === TokenType.Assignment && token.type === TokenType.Assignment && result[l] !== indentation) {
+                            res += token.text;
+                            continue;
+                        }
                         operatorSize = Math.max(operatorSize, token.text.length);
                         break;
                     } else {

@@ -81,3 +81,6 @@ int c |= d;
 import { canAddMessage, getMessage, getXMessage } from '../utils/API_Msg';
 import { getImg } from '../utils/API_Art';
 import { getProfileStore } from '../utils/Profile';
+
+a = 1
+b = c = 2
